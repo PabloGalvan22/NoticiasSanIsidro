@@ -57,8 +57,14 @@ function loadNews() {
         })
         .catch(error => {
             newsLoading.classList.add('hidden');
-            console.error('Error al cargar noticias:', error);
-            newsContainer.innerHTML = '<p style="grid-column:1/-1; text-align:center; padding:30px; color:#c0392b;">Error al cargar las noticias. Intenta de nuevo más tarde.</p>';
+            console.error('Error detallado al cargar noticias:', error);
+            newsContainer.innerHTML = `
+                <div style="grid-column:1/-1; text-align:center; padding:30px; color:#c0392b;">
+                    <h3>Error al cargar las noticias</h3>
+                    <p>${error.message}</p>
+                    <p>Por favor, verifica tu conexión a internet y la configuración de Firebase.</p>
+                </div>
+            `;
         });
 }
 
@@ -131,17 +137,15 @@ function showNewsDetail(newsId) {
         });
 }
 
-// Mostrar contenido de la noticia en vista detallada
 function displayNewsDetail(news) {
     // Ocultar loading y mostrar contenido
     newsDetailLoading.classList.add('hidden');
     newsDetailContainer.classList.remove('hidden');
-    
+
     const formattedDate = formatDate(news.timestamp);
-    
-    // Imagen por defecto si no hay URL proporcionada
     const imageUrl = news.imageUrl || DEFAULT_IMAGE;
-    
+    const tags = news.tags ? news.tags.split(',').map(tag => tag.trim()) : [];
+
     // Actualizar elementos con los datos de la noticia
     newsDetailTitle.textContent = news.title;
     newsDetailCategory.textContent = news.category || 'General';
@@ -149,10 +153,95 @@ function displayNewsDetail(news) {
     newsDetailDate.textContent = formattedDate;
     newsDetailImage.style.backgroundImage = `url('${imageUrl}')`;
     newsDetailSummary.textContent = news.summary;
-    newsDetailContent.innerHTML = news.content || '';
-    
-    // Actualizar título de la página
+
+    // Insertar contenido enriquecido
+    let contentHTML = news.content || '';
+
+    // Insertar video si existe
+    if (news.videoUrl) {
+        const videoEmbed = getVideoEmbedCode(news.videoUrl);
+        // Vamos a insertar el video en un contenedor específico
+        // En lugar de concatenarlo, lo vamos a poner en una sección aparte
+        // Pero para no cambiar mucho la estructura, vamos a ponerlo antes del contenido
+        contentHTML = videoEmbed + contentHTML;
+    }
+
+    newsDetailContent.innerHTML = contentHTML;
+
+    // Agregar etiquetas si existen
+    if (tags.length > 0) {
+        const tagsHTML = tags.map(tag =>
+            `<span style="display: inline-block; background: #eef2ff; color: #4a6fc1; padding: 5px 10px; border-radius: 15px; font-size: 0.9rem; margin-right: 8px; margin-bottom: 8px;">#${tag}</span>`
+        ).join('');
+
+        const tagsContainer = document.createElement('div');
+        tagsContainer.className = 'news-tags';
+        tagsContainer.style.marginTop = '30px';
+        tagsContainer.style.paddingTop = '20px';
+        tagsContainer.style.borderTop = '1px solid #eee';
+        tagsContainer.innerHTML = `<strong>Etiquetas:</strong><br>${tagsHTML}`;
+
+        newsDetailContent.appendChild(tagsContainer);
+    }
+
     document.title = `${news.title} - Portal de Noticias`;
+}//
+
+// Obtener código de inserción para videos
+function getVideoEmbedCode(videoUrl) {
+    if (!videoUrl) return '';
+
+    // YouTube
+    if (videoUrl.includes('youtube.com') || videoUrl.includes('youtu.be')) {
+        let videoId = '';
+
+        if (videoUrl.includes('youtube.com/watch?v=')) {
+            videoId = videoUrl.split('v=')[1];
+            const ampersandPosition = videoId.indexOf('&');
+            if (ampersandPosition !== -1) {
+                videoId = videoId.substring(0, ampersandPosition);
+            }
+        } else if (videoUrl.includes('youtu.be/')) {
+            videoId = videoUrl.split('youtu.be/')[1];
+        }
+
+        if (videoId) {
+            return `
+                <div class="video-container">
+                    <iframe 
+                        width="100%" 
+                        height="400" 
+                        src="https://www.youtube.com/embed/${videoId}" 
+                        frameborder="0" 
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                        allowfullscreen>
+                    </iframe>
+                </div>
+            `;
+        }
+    }
+
+    // Vimeo
+    if (videoUrl.includes('vimeo.com')) {
+        const videoId = videoUrl.split('vimeo.com/')[1];
+        if (videoId) {
+            return `
+                <div class="video-container">
+                    <iframe 
+                        width="100%" 
+                        height="400" 
+                        src="https://player.vimeo.com/video/${videoId}" 
+                        frameborder="0" 
+                        allow="autoplay; fullscreen; picture-in-picture" 
+                        allowfullscreen>
+                    </iframe>
+                </div>
+            `;
+        }
+    }
+
+    // Si no es un enlace reconocido, mostrar un enlace normal
+    return `<p><a href="${videoUrl}" target="_blank">Ver video</a></p>`;
 }
 
 // Volver a la lista de noticias

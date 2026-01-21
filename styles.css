@@ -947,3 +947,140 @@ footer {
         width: 100%;
     }
 }
+
+/* Estilos para el contenedor de video */
+.video-container {
+    position: relative;
+    width: 100%;
+    height: 0;
+    padding-bottom: 56.25%; /* Relación 16:9 */
+    margin: 20px 0;
+    overflow: hidden;
+    border-radius: 10px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+}
+
+.video-container iframe {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    border: 0;
+}
+
+/* ===== ESTILOS PARA VIDEOS ===== */
+.video-embed {
+    margin: 30px 0;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    background-color: #000;
+}
+
+.video-embed iframe {
+    display: block;
+    width: 100%;
+    height: 400px;
+    border: none;
+}
+
+.video-note {
+    background-color: #f8f9fa;
+    padding: 10px;
+    margin: 0;
+    text-align: center;
+    color: #666;
+    font-size: 0.9rem;
+    border-top: 1px solid #eee;
+}
+
+.video-note i {
+    color: #ff0000;
+    margin-right: 8px;
+}
+
+.video-link {
+    background-color: #e8f4fd;
+    padding: 15px;
+    border-radius: 5px;
+    border-left: 4px solid #4a6fc1;
+    margin: 20px 0;
+}
+
+.video-link a {
+    color: #4a6fc1;
+    font-weight: bold;
+    text-decoration: none;
+}
+
+.video-link a:hover {
+    text-decoration: underline;
+}
+
+/* Indicador de video en tarjetas de noticias */
+.has-video::after {
+    content: '🎬';
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: rgba(0,0,0,0.7);
+    color: white;
+    padding: 5px 10px;
+    border-radius: 20px;
+    font-size: 12px;
+    z-index: 1;
+}
+
+.news-image {
+    height: 200px;
+    background-color: #ddd;
+    background-size: contain;  /* Cambiado de cover a contain */
+    background-position: center;
+    background-repeat: no-repeat;
+}
+
+.news-detail-image {
+    height: 400px;
+    background-color: #ddd;
+    background-size: contain;  /* Cambiado de cover a contain */
+    background-position: center;
+    background-repeat: no-repeat;
+}
+
+/* Estilos para mensajes de estado */
+.publish-message {
+    position: fixed;
+    top: 80px;
+    right: 20px;
+    z-index: 1000;
+    max-width: 300px;
+    padding: 15px;
+    border-radius: 5px;
+    color: white;
+    font-weight: 600;
+    animation: slideIn 0.3s ease;
+}
+
+.publish-message.success {
+    background-color: #27ae60;
+}
+
+.publish-message.error {
+    background-color: #e74c3c;
+}
+
+.publish-message.warning {
+    background-color: #f39c12;
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}

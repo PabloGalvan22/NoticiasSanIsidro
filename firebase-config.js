@@ -8,8 +8,12 @@ const firebaseConfig = {
   appId: "1:719000010767:web:2e54e84e94ddb3400da37a"
 };
 
-// Inicializar Firebase
-firebase.initializeApp(firebaseConfig);
+// Inicializar Firebase solo una vez
+try {
+    firebase.initializeApp(firebaseConfig);
+} catch (error) {
+    console.error('Error al inicializar Firebase:', error);
+}
 
 // Exportar servicios de Firebase
 const auth = firebase.auth();

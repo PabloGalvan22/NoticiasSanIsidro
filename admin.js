@@ -100,7 +100,7 @@ document.addEventListener('DOMContentLoaded', function() {
             showLoginUI();
         }
     });
-    
+
     // Configurar email predeterminado para desarrollo
     if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
         loginEmailInput.value = 'admin@ejemplo.com';
@@ -195,24 +195,25 @@ function loadAdminNews(searchTerm = '') {
 function createAdminNewsCard(news) {
     const card = document.createElement('div');
     card.className = 'news-card';
+    card.dataset.id = news.id;
     
     const formattedDate = formatShortDate(news.timestamp);
     const imageUrl = news.imageUrl || DEFAULT_IMAGE;
-    const tags = news.tags ? news.tags.split(',').map(tag => tag.trim()) : [];
     
+    // HTML COMPLETO con botones de administración
     card.innerHTML = `
-        <div class="news-image" style="background-image: url('${imageUrl}')">
-            ${news.featured ? '<span class="featured-badge">Destacada</span>' : ''}
+        <div class="news-image ${news.videoUrl ? 'has-video' : ''}" 
+            style="background-image: url('${imageUrl}')">
         </div>
         <div class="news-content">
-            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px;">
+            <div class="news-card-header">
                 <span class="news-category">${news.category || 'General'}</span>
-                <div class="news-actions-buttons">
-                    <button class="edit-news" data-id="${news.id}" title="Editar" style="background: #3498db; color: white; border: none; padding: 5px 8px; border-radius: 3px; cursor: pointer; font-size: 0.8rem; margin-right: 5px;">
-                        <i class="fas fa-edit"></i>
+                <div class="news-card-actions">
+                    <button class="edit-news" data-id="${news.id}">
+                        <i class="fas fa-edit"></i> Editar
                     </button>
-                    <button class="delete-news" data-id="${news.id}" title="Eliminar" style="background: #e74c3c; color: white; border: none; padding: 5px 8px; border-radius: 3px; cursor: pointer; font-size: 0.8rem;">
-                        <i class="fas fa-trash"></i>
+                    <button class="delete-news" data-id="${news.id}">
+                        <i class="fas fa-trash"></i> Eliminar
                     </button>
                 </div>
             </div>
@@ -220,18 +221,10 @@ function createAdminNewsCard(news) {
             <div class="news-date">
                 <i class="far fa-calendar-alt"></i>
                 ${formattedDate}
+                ${news.videoUrl ? ' <i class="fas fa-video" style="margin-left:10px;color:#ff0000;"></i>' : ''}
             </div>
-            <p class="news-summary">${news.summary.substring(0, 100)}${news.summary.length > 100 ? '...' : ''}</p>
-            
-            ${tags.length > 0 ? `
-                <div class="news-tags" style="margin-top: 10px;">
-                    ${tags.map(tag => `<span style="display: inline-block; background: #eef2ff; color: #4a6fc1; padding: 3px 8px; border-radius: 12px; font-size: 0.75rem; margin-right: 5px; margin-bottom: 5px;">#${tag}</span>`).join('')}
-                </div>
-            ` : ''}
-            
-            <div style="margin-top: 15px; font-size: 0.85rem; color: #666;">
-                <i class="fas fa-user"></i> ${news.author || 'Administrador'}
-            </div>
+            <p class="news-summary">${news.summary}</p>
+            <div class="read-more">Leer más <i class="fas fa-arrow-right"></i></div>
         </div>
     `;
     
@@ -543,30 +536,69 @@ function previewNews() {
 
 // Obtener código de inserción para videos
 function getVideoEmbedCode(videoUrl) {
-    if (videoUrl.includes('youtube.com') || videoUrl.includes('youtu.be')) {
-        let videoId;
+    if (!videoUrl || typeof videoUrl !== 'string') return '';
+    
+    // Limpiar la URL
+    let url = videoUrl.trim();
+    
+    // YouTube - varios formatos
+    if (url.includes('youtube.com') || url.includes('youtu.be')) {
+        let videoId = '';
         
-        if (videoUrl.includes('youtube.com/watch?v=')) {
-            videoId = videoUrl.split('v=')[1];
-            const ampersandPosition = videoId.indexOf('&');
-            if (ampersandPosition !== -1) {
-                videoId = videoId.substring(0, ampersandPosition);
-            }
-        } else if (videoUrl.includes('youtu.be/')) {
-            videoId = videoUrl.split('youtu.be/')[1];
+        // Formato: https://www.youtube.com/watch?v=VIDEO_ID
+        if (url.includes('youtube.com/watch?v=')) {
+            const match = url.match(/v=([a-zA-Z0-9_-]+)/);
+            videoId = match ? match[1] : '';
+        }
+        // Formato: https://youtu.be/VIDEO_ID
+        else if (url.includes('youtu.be/')) {
+            const parts = url.split('youtu.be/');
+            videoId = parts[1] ? parts[1].split(/[?&#]/)[0] : '';
+        }
+        // Formato: https://www.youtube.com/embed/VIDEO_ID
+        else if (url.includes('youtube.com/embed/')) {
+            const parts = url.split('embed/');
+            videoId = parts[1] ? parts[1].split(/[?&#]/)[0] : '';
         }
         
         if (videoId) {
-            return `<iframe src="https://www.youtube.com/embed/${videoId}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>`;
-        }
-    } else if (videoUrl.includes('vimeo.com')) {
-        const videoId = videoUrl.split('vimeo.com/')[1];
-        if (videoId) {
-            return `<iframe src="https://player.vimeo.com/video/${videoId}" frameborder="0" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen></iframe>`;
+            return `<div class="video-embed">
+                <iframe 
+                    width="100%" 
+                    height="400" 
+                    src="https://www.youtube.com/embed/${videoId}" 
+                    frameborder="0" 
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                    allowfullscreen>
+                </iframe>
+                <p class="video-note"><i class="fas fa-video"></i> Video de YouTube</p>
+            </div>`;
         }
     }
     
-    return `<p>Enlace de video no compatible. URL: <a href="${videoUrl}" target="_blank">${videoUrl}</a></p>`;
+    // Vimeo
+    if (url.includes('vimeo.com')) {
+        const match = url.match(/vimeo\.com\/(\d+)/);
+        if (match && match[1]) {
+            return `<div class="video-embed">
+                <iframe 
+                    width="100%" 
+                    height="400" 
+                    src="https://player.vimeo.com/video/${match[1]}" 
+                    frameborder="0" 
+                    allow="autoplay; fullscreen; picture-in-picture" 
+                    allowfullscreen>
+                </iframe>
+                <p class="video-note"><i class="fas fa-video"></i> Video de Vimeo</p>
+            </div>`;
+        }
+    }
+    
+    // Si no es YouTube ni Vimeo, mostrar enlace
+    return `<div class="video-link">
+        <p><i class="fas fa-external-link-alt"></i> Enlace de video: 
+        <a href="${url}" target="_blank">${url}</a></p>
+    </div>`;
 }
 
 // Iniciar sesión
@@ -579,11 +611,25 @@ function login() {
         return;
     }
     
+    // Validar que el email sea de administrador (ejemplo: termine en '@admin.com')
+    // Cambia el dominio según tus necesidades
+    if (!email.endsWith('@admin.com')) {
+        showMessage('Acceso solo para administradores con email @admin.com', 'error');
+        return;
+    }
+    
     submitLoginBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Iniciando sesión...';
     submitLoginBtn.disabled = true;
     
     auth.signInWithEmailAndPassword(email, password)
         .then(userCredential => {
+
+             if (!email.includes('admin')) { // O usa: !email.endsWith('@tudominio.com')
+                showMessage('Acceso solo para administradores autorizados', 'error');
+                auth.signOut(); // Cerrar sesión inmediatamente
+                return;
+            }
+
             showMessage('Inicio de sesión exitoso', 'success');
             
             submitLoginBtn.innerHTML = 'Acceder';
