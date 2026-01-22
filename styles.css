@@ -1084,3 +1084,365 @@ footer {
         opacity: 1;
     }
 }
+
+/* Estilos para el filtro de categorías en la página principal */
+.category-filter {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+#category-filter-select,
+#admin-category-filter {
+    padding: 10px 15px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    background-color: white;
+    color: #333;
+    font-size: 1rem;
+    min-width: 200px;
+    cursor: pointer;
+    transition: border-color 0.3s;
+}
+
+#category-filter-select:focus,
+#admin-category-filter:focus {
+    outline: none;
+    border-color: #4a6fc1;
+    box-shadow: 0 0 0 3px rgba(74, 111, 193, 0.1);
+}
+
+#clear-filter {
+    padding: 8px 12px;
+    font-size: 0.9rem;
+}
+
+/* Controles de filtro en admin */
+.filter-controls {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin-left: auto;
+}
+
+.category-filter-admin {
+    display: flex;
+    align-items: center;
+}
+
+/* Mejorar diseño responsive */
+@media (max-width: 768px) {
+    .actions-bar {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 15px;
+    }
+    
+    .category-filter,
+    .filter-controls {
+        width: 100%;
+    }
+    
+    #category-filter-select,
+    #admin-category-filter {
+        width: 100%;
+    }
+    
+    .filter-controls {
+        flex-direction: column;
+    }
+}
+
+/* Indicador de categoría activa */
+.category-active {
+    background-color: #4a6fc1 !important;
+    color: white !important;
+}
+
+/* Badge para mostrar categoría en vista detalle */
+.category-badge {
+    display: inline-flex;
+    align-items: center;
+    background-color: #4a6fc1;
+    color: white;
+    padding: 5px 10px;
+    border-radius: 20px;
+    font-size: 0.9rem;
+    margin-right: 10px;
+    font-weight: 600;
+}
+
+.category-badge i {
+    margin-right: 5px;
+}
+
+/* Estadísticas de filtro */
+.filter-stats {
+    margin: 10px 0;
+    padding: 10px;
+    background-color: #f8f9fa;
+    border-radius: 5px;
+    font-size: 0.9rem;
+    color: #666;
+}
+
+/* Estilos para etiquetas de categoría en tarjetas */
+.news-card-category {
+    position: absolute;
+    top: 15px;
+    left: 15px;
+    background-color: rgba(30, 60, 114, 0.9);
+    color: white;
+    padding: 5px 10px;
+    border-radius: 3px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    z-index: 1;
+}
+
+/* ===== ESTILOS PARA FILTRO DE CATEGORÍA ===== */
+.filter-section {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.category-filter {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+#category-filter-select {
+    padding: 10px 15px;
+    border: 2px solid #4a6fc1;
+    border-radius: 8px;
+    background-color: white;
+    color: #333;
+    font-size: 1rem;
+    min-width: 250px;
+    cursor: pointer;
+    transition: all 0.3s;
+    font-weight: 500;
+}
+
+#category-filter-select:focus {
+    outline: none;
+    border-color: #1e3c72;
+    box-shadow: 0 0 0 3px rgba(30, 60, 114, 0.1);
+}
+
+.filter-stats {
+    padding: 10px 15px;
+    background-color: #eef2ff;
+    border-radius: 8px;
+    border-left: 4px solid #4a6fc1;
+    font-size: 0.95rem;
+    color: #333;
+}
+
+.filter-info {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.filter-info i {
+    color: #4a6fc1;
+}
+
+.clear-filter-btn {
+    background: none;
+    border: none;
+    color: #e74c3c;
+    padding: 5px 10px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 0.85rem;
+    margin-left: 10px;
+    transition: background-color 0.3s;
+}
+
+.clear-filter-btn:hover {
+    background-color: rgba(231, 76, 60, 0.1);
+}
+
+/* Estilos para tarjetas de noticias filtradas */
+.news-card[data-filtered="true"] {
+    animation: fadeIn 0.5s ease;
+    border: 2px solid #4a6fc1;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Indicador visual de categoría en tarjetas */
+.news-card-category {
+    position: absolute;
+    top: 15px;
+    left: 15px;
+    background-color: rgba(30, 60, 114, 0.9);
+    color: white;
+    padding: 5px 12px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    z-index: 2;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Mejoras para dispositivos móviles */
+@media (max-width: 768px) {
+    .filter-section {
+        flex-direction: column;
+    }
+    
+    #category-filter-select {
+        min-width: 100%;
+    }
+    
+    .filter-info {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 5px;
+    }
+    
+    .clear-filter-btn {
+        margin-left: 0;
+        margin-top: 5px;
+    }
+}
+
+/* Estilo para cuando no hay resultados */
+.no-results {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 40px 20px;
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border-radius: 10px;
+    border: 2px dashed #dee2e6;
+}
+
+.no-results i {
+    font-size: 3rem;
+    color: #adb5bd;
+    margin-bottom: 15px;
+}
+
+.no-results h3 {
+    color: #495057;
+    margin-bottom: 10px;
+}
+
+.no-results p {
+    color: #6c757d;
+    margin-bottom: 20px;
+}
+
+/* ===== ESTILOS PARA FILTRO DE CATEGORÍA ===== */
+.filter-section {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.category-filter {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+#category-filter-select {
+    padding: 10px 15px;
+    border: 2px solid #4a6fc1;
+    border-radius: 8px;
+    background-color: white;
+    color: #333;
+    font-size: 1rem;
+    min-width: 250px;
+    cursor: pointer;
+    transition: all 0.3s;
+    font-weight: 500;
+}
+
+#category-filter-select:focus {
+    outline: none;
+    border-color: #1e3c72;
+    box-shadow: 0 0 0 3px rgba(30, 60, 114, 0.1);
+}
+
+.filter-stats {
+    padding: 10px 15px;
+    background-color: #eef2ff;
+    border-radius: 8px;
+    border-left: 4px solid #4a6fc1;
+    font-size: 0.95rem;
+    color: #333;
+}
+
+.filter-info {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.filter-info i {
+    color: #4a6fc1;
+}
+
+.clear-filter-btn {
+    background: none;
+    border: none;
+    color: #e74c3c;
+    padding: 5px 10px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 0.85rem;
+    margin-left: 10px;
+    transition: background-color 0.3s;
+}
+
+.clear-filter-btn:hover {
+    background-color: rgba(231, 76, 60, 0.1);
+}
+
+.news-card-category {
+    position: absolute;
+    top: 15px;
+    left: 15px;
+    background-color: rgba(30, 60, 114, 0.9);
+    color: white;
+    padding: 5px 12px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    z-index: 2;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+@media (max-width: 768px) {
+    .filter-section {
+        flex-direction: column;
+    }
+    
+    #category-filter-select {
+        min-width: 100%;
+    }
+    
+    .filter-info {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 5px;
+    }
+    
+    .clear-filter-btn {
+        margin-left: 0;
+        margin-top: 5px;
+    }
+}

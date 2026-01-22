@@ -9,8 +9,6 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
-    
-    <!-- CKEditor 5 - Versión Clásica 100% GRATUITA -->
     <script src="https://cdn.ckeditor.com/ckeditor5/41.1.0/classic/ckeditor.js"></script>
 </head>
 <body>
@@ -134,13 +132,34 @@
             <!-- Lista de noticias publicadas (solo para admin) -->
             <div class="published-news">
                 <h3 class="section-title">Noticias Publicadas <span id="news-count">(0)</span></h3>
+                <!-- En la sección de published-news -->
+                <!-- En la sección de published-news, REEMPLAZAR el news-actions con esto: -->
                 <div class="news-actions">
                     <button id="refresh-news" class="refresh-btn">
                         <i class="fas fa-sync-alt"></i> Actualizar Lista
                     </button>
-                    <div class="search-box">
-                        <input type="text" id="search-news" placeholder="Buscar noticias...">
-                        <i class="fas fa-search"></i>
+                    <!-- Agregar después del botón de Actualizar Lista -->
+                    <button id="force-reload" class="refresh-btn" title="Forzar recarga completa">
+                        <i class="fas fa-redo-alt"></i> Recarga Forzada
+                    </button>
+                    <div class="admin-filters">
+                        <select id="admin-category-filter" class="category-filter-admin">
+                            <option value="">Todas las categorías</option>
+                            <option value="Política">Política</option>
+                            <option value="Tecnología">Tecnología</option>
+                            <option value="Deportes">Deportes</option>
+                            <option value="Cultura">Cultura</option>
+                            <option value="Salud">Salud</option>
+                            <option value="Internacional">Internacional</option>
+                            <option value="Economía">Economía</option>
+                            <option value="Educación">Educación</option>
+                            <option value="Entretenimiento">Entretenimiento</option>
+                            <option value="Ciencia">Ciencia</option>
+                        </select>
+                        <div class="search-box">
+                            <input type="text" id="search-news" placeholder="Buscar noticias...">
+                            <i class="fas fa-search"></i>
+                        </div>
                     </div>
                 </div>
                 <div id="admin-news-loading" class="loading">
