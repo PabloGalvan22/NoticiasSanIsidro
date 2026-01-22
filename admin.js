@@ -31,8 +31,10 @@ const forceReloadBtn = document.getElementById('force-reload');
 
 // Variables globales
 let isAdmin = false;
-let ckeditor = null; // Instancia de CKEditor 5
+let ckeditor = null;
 let currentDraft = null;
+let isAdminLoading = false;
+let currentAdminLoadId = 0;
 
 // Inicializar CKEditor 5
 function initCKEditor() {
@@ -85,7 +87,6 @@ function initSummaryCounter() {
             }
         });
         
-        // Inicializar contador
         summaryChars.textContent = summaryInput.value.length;
     }
 }
@@ -103,48 +104,141 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // Configurar email predeterminado para desarrollo
     if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
         loginEmailInput.value = 'admin@ejemplo.com';
         loginPasswordInput.value = 'admin123';
     }
     
-    // Cargar borrador guardado
     loadDraft();
+    
+    setupEventListeners();
 });
 
-// Función para verificar y limpiar duplicados en Firebase
-function checkForDuplicates() {
-    db.collection('news').get()
-        .then(querySnapshot => {
-            const newsByTitle = {};
-            const duplicates = [];
-            
-            querySnapshot.forEach(doc => {
-                const news = doc.data();
-                const title = news.title;
-                
-                if (newsByTitle[title]) {
-                    duplicates.push({
-                        id: doc.id,
-                        title: title,
-                        existingId: newsByTitle[title]
-                    });
+// Función para configurar event listeners una sola vez
+function setupEventListeners() {
+    // Login
+    if (submitLoginBtn && !submitLoginBtn.dataset.listenerAdded) {
+        submitLoginBtn.dataset.listenerAdded = 'true';
+        submitLoginBtn.addEventListener('click', login);
+    }
+    
+    // Logout
+    if (logoutBtn && !logoutBtn.dataset.listenerAdded) {
+        logoutBtn.dataset.listenerAdded = 'true';
+        logoutBtn.addEventListener('click', logout);
+    }
+    
+    // Formulario de noticias
+    if (newsForm && !newsForm.dataset.listenerAdded) {
+        newsForm.dataset.listenerAdded = 'true';
+        newsForm.addEventListener('submit', publishNews);
+    }
+    
+    // Botones del formulario
+    if (previewNewsBtn && !previewNewsBtn.dataset.listenerAdded) {
+        previewNewsBtn.dataset.listenerAdded = 'true';
+        previewNewsBtn.addEventListener('click', previewNews);
+    }
+    
+    if (saveDraftBtn && !saveDraftBtn.dataset.listenerAdded) {
+        saveDraftBtn.dataset.listenerAdded = 'true';
+        saveDraftBtn.addEventListener('click', saveDraft);
+    }
+    
+    if (resetFormBtn && !resetFormBtn.dataset.listenerAdded) {
+        resetFormBtn.dataset.listenerAdded = 'true';
+        resetFormBtn.addEventListener('click', () => {
+            if (confirm('¿Estás seguro de que quieres limpiar el formulario? Se perderán los cambios no guardados.')) {
+                newsForm.reset();
+                if (ckeditor) {
+                    ckeditor.setData('');
                 } else {
-                    newsByTitle[title] = doc.id;
+                    document.getElementById('news-content').value = '';
                 }
-            });
-            
-            if (duplicates.length > 0) {
-                console.warn('Se encontraron duplicados:', duplicates);
-                showMessage(`Se encontraron ${duplicates.length} noticias duplicadas.`, 'warning');
-            } else {
-                console.log('No se encontraron duplicados.');
+                delete newsForm.dataset.editingId;
+                publishNewsBtn.innerHTML = '<i class="fas fa-paper-plane"></i> Publicar Noticia';
+                if (summaryChars) {
+                    summaryChars.textContent = '0';
+                }
+                showMessage('Formulario limpiado', 'success');
             }
-        })
-        .catch(error => {
-            console.error('Error al verificar duplicados:', error);
         });
+    }
+    
+    // Búsqueda y filtros con debounce
+    let searchDebounceTimer;
+    if (searchNewsInput) {
+        searchNewsInput.addEventListener('input', function() {
+            clearTimeout(searchDebounceTimer);
+            searchDebounceTimer = setTimeout(() => {
+                loadAdminNews(this.value, adminCategoryFilter ? adminCategoryFilter.value : '');
+            }, 500);
+        });
+    }
+    
+    let categoryDebounceTimer;
+    if (adminCategoryFilter) {
+        adminCategoryFilter.addEventListener('change', function() {
+            clearTimeout(categoryDebounceTimer);
+            categoryDebounceTimer = setTimeout(() => {
+                loadAdminNews(searchNewsInput.value, this.value);
+            }, 300);
+        });
+    }
+    
+    // Botón de actualizar
+    if (refreshNewsBtn && !refreshNewsBtn.dataset.listenerAdded) {
+        refreshNewsBtn.dataset.listenerAdded = 'true';
+        refreshNewsBtn.addEventListener('click', () => {
+            loadAdminNews(searchNewsInput.value, adminCategoryFilter ? adminCategoryFilter.value : '');
+            showMessage('Lista actualizada', 'success');
+        });
+    }
+    
+    // Botón de recarga forzada
+    if (forceReloadBtn && !forceReloadBtn.dataset.listenerAdded) {
+        forceReloadBtn.dataset.listenerAdded = 'true';
+        forceReloadBtn.addEventListener('click', forceReloadNews);
+    }
+    
+    // Modal de vista previa
+    if (closePreviewBtn && !closePreviewBtn.dataset.listenerAdded) {
+        closePreviewBtn.dataset.listenerAdded = 'true';
+        closePreviewBtn.addEventListener('click', () => {
+            previewModal.classList.add('hidden');
+        });
+    }
+    
+    if (editFromPreviewBtn && !editFromPreviewBtn.dataset.listenerAdded) {
+        editFromPreviewBtn.dataset.listenerAdded = 'true';
+        editFromPreviewBtn.addEventListener('click', () => {
+            previewModal.classList.add('hidden');
+        });
+    }
+    
+    if (publishFromPreviewBtn && !publishFromPreviewBtn.dataset.listenerAdded) {
+        publishFromPreviewBtn.dataset.listenerAdded = 'true';
+        publishFromPreviewBtn.addEventListener('click', () => {
+            publishNewsBtn.click();
+            previewModal.classList.add('hidden');
+        });
+    }
+    
+    // Cerrar modal al hacer clic fuera
+    previewModal.addEventListener('click', (e) => {
+        if (e.target === previewModal) {
+            previewModal.classList.add('hidden');
+        }
+    });
+    
+    // Permitir Enter en login
+    if (loginPasswordInput) {
+        loginPasswordInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                login();
+            }
+        });
+    }
 }
 
 function showAdminUI(user) {
@@ -155,14 +249,8 @@ function showAdminUI(user) {
     
     userEmail.textContent = user.email;
     userAvatar.textContent = user.email.charAt(0).toUpperCase();
-    
-    // Verificar duplicados (solo en desarrollo)
-    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-        setTimeout(checkForDuplicates, 1000);
-    }
 }
 
-// Mostrar interfaz de login
 function showLoginUI() {
     isAdmin = false;
     userInfo.classList.add('hidden');
@@ -170,63 +258,64 @@ function showLoginUI() {
     adminPanel.classList.add('hidden');
 }
 
-// Cargar noticias para el administrador - VERSIÓN DEFINITIVA
+// Cargar noticias para el administrador - VERSIÓN CORREGIDA SIN DUPLICADOS
 function loadAdminNews(searchTerm = '', category = '') {
-    console.log('Cargando noticias con filtros:', { searchTerm, category });
+    if (isAdminLoading) {
+        console.log('Carga de admin en progreso, ignorando...');
+        return;
+    }
     
-    // LIMPIAR COMPLETAMENTE antes de cargar
+    const loadId = ++currentAdminLoadId;
+    console.log(`Iniciando carga admin #${loadId}`, { searchTerm, category });
+    
+    isAdminLoading = true;
     adminNewsContainer.innerHTML = '';
     adminNewsLoading.classList.remove('hidden');
-    
-    // Array para rastrear IDs y evitar duplicados
-    const loadedNewsIds = new Set();
     
     let query = db.collection('news').orderBy('timestamp', 'desc');
     
     query.get()
         .then(querySnapshot => {
+            // Verificar si es la carga más reciente
+            if (loadId !== currentAdminLoadId) {
+                console.log(`Carga admin #${loadId} obsoleta`);
+                isAdminLoading = false;
+                return;
+            }
+            
             adminNewsLoading.classList.add('hidden');
             
             let totalCount = querySnapshot.size;
             let filteredCount = 0;
+            const newsToDisplay = [];
+            const seenIds = new Set();
+            const searchLower = searchTerm ? searchTerm.toLowerCase() : '';
             
             if (querySnapshot.empty) {
                 adminNewsContainer.innerHTML = '<p style="grid-column:1/-1; text-align:center; padding:30px; color:#666;">No hay noticias publicadas.</p>';
                 newsCount.textContent = '(0)';
+                isAdminLoading = false;
                 return;
             }
-            
-            // Primero, procesar y filtrar
-            const newsToDisplay = [];
             
             querySnapshot.forEach(doc => {
                 const news = doc.data();
                 news.id = doc.id;
                 
-                // Verificar que tenga ID válido
-                if (!news.id) {
-                    console.warn('Noticia sin ID válido:', news);
+                // Prevenir duplicados
+                if (seenIds.has(news.id)) {
+                    console.warn('Noticia duplicada en admin:', news.id);
                     return;
                 }
+                seenIds.add(news.id);
                 
-                // Evitar duplicados por ID
-                if (loadedNewsIds.has(news.id)) {
-                    console.warn('Noticia duplicada ignorada:', news.id);
-                    return;
-                }
-                
-                loadedNewsIds.add(news.id);
-                
-                // FILTRO POR CATEGORÍA - COMPARACIÓN ESTRICTA
                 if (category && category !== '') {
                     if (!news.category || news.category.trim() !== category.trim()) {
                         return;
                     }
                 }
                 
-                // FILTRO POR BÚSQUEDA
                 if (searchTerm) {
-                    const searchLower = searchTerm.toLowerCase().trim();
                     const titleMatch = news.title ? news.title.toLowerCase().includes(searchLower) : false;
                     const summaryMatch = news.summary ? news.summary.toLowerCase().includes(searchLower) : false;
                     const tagsMatch = news.tags ? news.tags.toLowerCase().includes(searchLower) : false;
@@ -240,7 +329,13 @@ function loadAdminNews(searchTerm = '', category = '') {
                 newsToDisplay.push(news);
             });
             
-            // Ahora mostrar las noticias
+            // Ordenar por fecha
+            newsToDisplay.sort((a, b) => {
+                const dateA = a.timestamp ? (a.timestamp.toDate ? a.timestamp.toDate() : new Date(a.timestamp)) : new Date(0);
+                const dateB = b.timestamp ? (b.timestamp.toDate ? b.timestamp.toDate() : new Date(b.timestamp)) : new Date(0);
+                return dateB - dateA;
+            });
+            
             if (newsToDisplay.length === 0) {
                 let message = 'No se encontraron noticias';
                 if (category) message += ` en la categoría "${category}"`;
@@ -255,27 +350,21 @@ function loadAdminNews(searchTerm = '', category = '') {
                     </div>
                 `;
                 
-                document.getElementById('clear-all-filters').addEventListener('click', () => {
-                    searchNewsInput.value = '';
-                    if (adminCategoryFilter) adminCategoryFilter.value = '';
-                    loadAdminNews();
-                });
+                const clearBtn = document.getElementById('clear-all-filters');
+                if (clearBtn) {
+                    clearBtn.addEventListener('click', () => {
+                        searchNewsInput.value = '';
+                        if (adminCategoryFilter) adminCategoryFilter.value = '';
+                        loadAdminNews();
+                    });
+                }
             } else {
-                // Ordenar por fecha más reciente
-                newsToDisplay.sort((a, b) => {
-                    const dateA = a.timestamp ? (a.timestamp.toDate ? a.timestamp.toDate() : new Date(a.timestamp)) : new Date(0);
-                    const dateB = b.timestamp ? (b.timestamp.toDate ? b.timestamp.toDate() : new Date(b.timestamp)) : new Date(0);
-                    return dateB - dateA;
-                });
-                
-                // Mostrar cada noticia
                 newsToDisplay.forEach(news => {
                     const newsCard = createAdminNewsCard(news);
                     adminNewsContainer.appendChild(newsCard);
                 });
             }
             
-            // Actualizar contador
             let countText = `(${filteredCount}`;
             if (filteredCount !== totalCount) {
                 countText += ` de ${totalCount}`;
@@ -283,14 +372,21 @@ function loadAdminNews(searchTerm = '', category = '') {
             countText += ')';
             newsCount.textContent = countText;
             
-            console.log('Noticias cargadas:', filteredCount, 'de', totalCount);
+            console.log(`Carga admin #${loadId} completada: ${filteredCount} de ${totalCount}`);
         })
         .catch(error => {
-            adminNewsLoading.classList.add('hidden');
-            console.error('Error al cargar noticias:', error);
-            showMessage('Error al cargar las noticias', 'error');
+            if (loadId === currentAdminLoadId) {
+                adminNewsLoading.classList.add('hidden');
+                console.error('Error al cargar noticias:', error);
+                showMessage('Error al cargar las noticias', 'error');
+            }
+        })
+        .finally(() => {
+            if (loadId === currentAdminLoadId) {
+                isAdminLoading = false;
+            }
         });
-}           
+}
 
 // Crear tarjeta de noticia para el administrador
 function createAdminNewsCard(news) {
@@ -301,7 +397,6 @@ function createAdminNewsCard(news) {
     const formattedDate = formatShortDate(news.timestamp);
     const imageUrl = news.imageUrl || DEFAULT_IMAGE;
     
-    // HTML COMPLETO con botones de administración
     card.innerHTML = `
         <div class="news-image ${news.videoUrl ? 'has-video' : ''}" 
             style="background-image: url('${imageUrl}')">
@@ -329,20 +424,34 @@ function createAdminNewsCard(news) {
         </div>
     `;
     
-    // Agregar event listeners
+    // Agregar event listeners únicos
     const deleteBtn = card.querySelector('.delete-news');
-    deleteBtn.addEventListener('click', function(e) {
-        e.stopPropagation();
-        const newsId = this.getAttribute('data-id');
-        deleteNews(newsId);
-    });
+    if (deleteBtn && !deleteBtn.dataset.listenerAdded) {
+        deleteBtn.dataset.listenerAdded = 'true';
+        deleteBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            const newsId = this.getAttribute('data-id');
+            deleteNews(newsId);
+        });
+    }
     
     const editBtn = card.querySelector('.edit-news');
-    editBtn.addEventListener('click', function(e) {
-        e.stopPropagation();
-        const newsId = this.getAttribute('data-id');
-        editNews(newsId);
-    });
+    if (editBtn && !editBtn.dataset.listenerAdded) {
+        editBtn.dataset.listenerAdded = 'true';
+        editBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            const newsId = this.getAttribute('data-id');
+            editNews(newsId);
+        });
+    }
+    
+    // Listener para la tarjeta
+    if (!card.dataset.listenerAdded) {
+        card.dataset.listenerAdded = 'true';
+        card.addEventListener('click', () => {
+            window.open(`index.html?news=${news.id}`, '_blank');
+        });
+    }
     
     return card;
 }
@@ -371,7 +480,6 @@ function editNews(newsId) {
             if (doc.exists) {
                 const news = doc.data();
                 
-                // Rellenar formulario con datos existentes
                 document.getElementById('news-title').value = news.title || '';
                 document.getElementById('news-category').value = news.category || '';
                 document.getElementById('news-image').value = news.imageUrl || '';
@@ -379,23 +487,19 @@ function editNews(newsId) {
                 document.getElementById('news-tags').value = news.tags || '';
                 document.getElementById('news-video').value = news.videoUrl || '';
                 
-                // Actualizar CKEditor
                 if (ckeditor) {
                     ckeditor.setData(news.content || '');
                 } else {
                     document.getElementById('news-content').value = news.content || '';
                 }
                 
-                // Actualizar contador de caracteres
                 if (summaryChars) {
                     summaryChars.textContent = news.summary ? news.summary.length : 0;
                 }
                 
-                // Guardar ID para actualizar en lugar de crear nuevo
                 newsForm.dataset.editingId = newsId;
                 publishNewsBtn.innerHTML = '<i class="fas fa-sync-alt"></i> Actualizar Noticia';
                 
-                // Desplazarse al formulario
                 document.getElementById('news-title').scrollIntoView({ behavior: 'smooth' });
                 
                 showMessage('Modo edición activado. Los cambios se guardarán sobre la noticia existente.', 'success');
@@ -433,7 +537,6 @@ function loadDraft() {
         try {
             currentDraft = JSON.parse(draftStr);
             
-            // Mostrar opción para restaurar
             const restoreBtn = document.createElement('button');
             restoreBtn.className = 'back-button';
             restoreBtn.innerHTML = '<i class="fas fa-history"></i> Restaurar Borrador';
@@ -488,13 +591,11 @@ function publishNews(event) {
     const videoUrl = document.getElementById('news-video').value.trim();
     const isEditing = newsForm.dataset.editingId;
     
-    // Validación
     if (!title || !category || !summary || !content) {
         showMessage('Por favor, completa todos los campos obligatorios', 'error');
         return;
     }
     
-    // Crear objeto de noticia
     const newsItem = {
         title,
         category,
@@ -509,23 +610,19 @@ function publishNews(event) {
         lastModified: new Date().toISOString()
     };
     
-    // Mostrar estado de carga
     publishNewsBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Publicando...';
     publishNewsBtn.disabled = true;
     
     let promise;
     
     if (isEditing) {
-        // Actualizar noticia existente
         promise = db.collection('news').doc(isEditing).update(newsItem);
     } else {
-        // Crear nueva noticia
         promise = db.collection('news').add(newsItem);
     }
     
     promise
         .then((result) => {
-            // Limpiar formulario
             newsForm.reset();
             if (ckeditor) {
                 ckeditor.setData('');
@@ -533,24 +630,19 @@ function publishNews(event) {
                 document.getElementById('news-content').value = '';
             }
             
-            // Limpiar modo edición
             delete newsForm.dataset.editingId;
             publishNewsBtn.innerHTML = '<i class="fas fa-paper-plane"></i> Publicar Noticia';
             
-            // Limpiar borrador
             localStorage.removeItem('newsDraft');
             currentDraft = null;
             
-            // Mostrar mensaje de éxito
             const message = isEditing ? 
                 '¡Noticia actualizada exitosamente!' : 
                 '¡Noticia publicada exitosamente!';
             showMessage(message, 'success');
             
-            // Recargar lista de noticias
             loadAdminNews();
             
-            // Cerrar modal de vista previa si está abierto
             previewModal.classList.add('hidden');
         })
         .catch(error => {
@@ -558,7 +650,6 @@ function publishNews(event) {
             showMessage('Error: ' + error.message, 'error');
         })
         .finally(() => {
-            // Restaurar botón
             publishNewsBtn.innerHTML = '<i class="fas fa-paper-plane"></i> Publicar Noticia';
             publishNewsBtn.disabled = false;
         });
@@ -574,7 +665,6 @@ function previewNews() {
     const tags = document.getElementById('news-tags').value.trim();
     const videoUrl = document.getElementById('news-video').value.trim();
     
-    // Validación básica
     if (!title || !category || !summary || !content) {
         showMessage('Completa todos los campos obligatorios para ver la vista previa', 'warning');
         return;
@@ -583,7 +673,6 @@ function previewNews() {
     const imageToUse = imageUrl || DEFAULT_IMAGE;
     const tagsArray = tags ? tags.split(',').map(tag => tag.trim()) : [];
     
-    // Crear vista previa en el modal
     previewModalBody.innerHTML = `
         <div class="news-detail-container">
             <div class="news-detail-header">
@@ -639,24 +728,20 @@ function previewNews() {
 function getVideoEmbedCode(videoUrl) {
     if (!videoUrl || typeof videoUrl !== 'string') return '';
     
-    // Limpiar la URL
     let url = videoUrl.trim();
     
-    // YouTube - varios formatos
+    // YouTube
     if (url.includes('youtube.com') || url.includes('youtu.be')) {
         let videoId = '';
         
-        // Formato: https://www.youtube.com/watch?v=VIDEO_ID
         if (url.includes('youtube.com/watch?v=')) {
             const match = url.match(/v=([a-zA-Z0-9_-]+)/);
             videoId = match ? match[1] : '';
         }
-        // Formato: https://youtu.be/VIDEO_ID
         else if (url.includes('youtu.be/')) {
             const parts = url.split('youtu.be/');
             videoId = parts[1] ? parts[1].split(/[?&#]/)[0] : '';
         }
-        // Formato: https://www.youtube.com/embed/VIDEO_ID
         else if (url.includes('youtube.com/embed/')) {
             const parts = url.split('embed/');
             videoId = parts[1] ? parts[1].split(/[?&#]/)[0] : '';
@@ -695,14 +780,13 @@ function getVideoEmbedCode(videoUrl) {
         }
     }
     
-    // Si no es YouTube ni Vimeo, mostrar enlace
     return `<div class="video-link">
         <p><i class="fas fa-external-link-alt"></i> Enlace de video: 
         <a href="${url}" target="_blank">${url}</a></p>
     </div>`;
 }
 
-// **FUNCIÓN LOGIN CORREGIDA - SIN VALIDACIONES EXTRA**
+// Función login
 function login() {
     const email = loginEmailInput.value.trim();
     const password = loginPasswordInput.value;
@@ -717,7 +801,6 @@ function login() {
     
     auth.signInWithEmailAndPassword(email, password)
         .then(userCredential => {
-            // Éxito - mostrará el panel automáticamente por onAuthStateChanged
             submitLoginBtn.innerHTML = 'Acceder';
             submitLoginBtn.disabled = false;
         })
@@ -772,6 +855,15 @@ function showMessage(message, type) {
     }, 3000);
 }
 
+// Función para forzar recarga completa
+function forceReloadNews() {
+    console.log('Forzando recarga completa...');
+    currentAdminLoadId = 0;
+    loadAdminNews(searchNewsInput.value, adminCategoryFilter ? adminCategoryFilter.value : '');
+    showMessage('Recarga forzada completada', 'success');
+}
+
+// Función debounce
 function debounce(func, wait) {
     let timeout;
     return function executedFunction(...args) {
@@ -783,101 +875,3 @@ function debounce(func, wait) {
         timeout = setTimeout(later, wait);
     };
 }
-
-// Función para forzar recarga completa
-function forceReloadNews() {
-    console.log('Forzando recarga completa...');
-    
-    // Limpiar caché de IDs
-    if (typeof loadedNewsIds !== 'undefined') {
-        loadedNewsIds.clear();
-    }
-    
-    // Limpiar completamente
-    adminNewsContainer.innerHTML = '';
-    
-    // Recargar
-    loadAdminNews(searchNewsInput.value, adminCategoryFilter ? adminCategoryFilter.value : '');
-    
-    showMessage('Recarga forzada completada', 'success');
-}
-
-// Event Listeners
-if (submitLoginBtn) submitLoginBtn.addEventListener('click', login);
-if (logoutBtn) logoutBtn.addEventListener('click', logout);
-if (newsForm) newsForm.addEventListener('submit', publishNews);
-if (previewNewsBtn) previewNewsBtn.addEventListener('click', previewNews);
-if (saveDraftBtn) saveDraftBtn.addEventListener('click', saveDraft);
-if (resetFormBtn) resetFormBtn.addEventListener('click', () => {
-    if (confirm('¿Estás seguro de que quieres limpiar el formulario? Se perderán los cambios no guardados.')) {
-        newsForm.reset();
-        if (ckeditor) {
-            ckeditor.setData('');
-        } else {
-            document.getElementById('news-content').value = '';
-        }
-        delete newsForm.dataset.editingId;
-        publishNewsBtn.innerHTML = '<i class="fas fa-paper-plane"></i> Publicar Noticia';
-        if (summaryChars) {
-            summaryChars.textContent = '0';
-        }
-        showMessage('Formulario limpiado', 'success');
-    }
-});
-
-if (closePreviewBtn) closePreviewBtn.addEventListener('click', () => {
-    previewModal.classList.add('hidden');
-});
-if (editFromPreviewBtn) editFromPreviewBtn.addEventListener('click', () => {
-    previewModal.classList.add('hidden');
-});
-if (publishFromPreviewBtn) publishFromPreviewBtn.addEventListener('click', () => {
-    publishNewsBtn.click();
-    previewModal.classList.add('hidden');
-});
-
-// Permitir enviar el formulario con Enter en los campos de login
-if (loginPasswordInput) {
-    loginPasswordInput.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') {
-            login();
-        }
-    });
-}
-
-// REEMPLAZAR los event listeners con versiones debounced:
-if (refreshNewsBtn) {
-    refreshNewsBtn.addEventListener('click', () => {
-        loadAdminNews(searchNewsInput.value, adminCategoryFilter ? adminCategoryFilter.value : '');
-        showMessage('Lista actualizada', 'success');
-    });
-}
-
-if (searchNewsInput) {
-    // Usar debounce para evitar múltiples llamadas durante escritura
-    const debouncedSearch = debounce((e) => {
-        loadAdminNews(e.target.value, adminCategoryFilter ? adminCategoryFilter.value : '');
-    }, 300);
-    
-    searchNewsInput.addEventListener('input', debouncedSearch);
-}
-
-// AGREGAR event listener para filtro de categoría con debounce
-if (adminCategoryFilter) {
-    const debouncedCategoryFilter = debounce(function() {
-        loadAdminNews(searchNewsInput.value, this.value);
-    }, 300);
-    
-    adminCategoryFilter.addEventListener('change', debouncedCategoryFilter);
-}
-
-if (forceReloadBtn) {
-    forceReloadBtn.addEventListener('click', forceReloadNews);
-}
-
-// Cerrar modal al hacer clic fuera
-previewModal.addEventListener('click', (e) => {
-    if (e.target === previewModal) {
-        previewModal.classList.add('hidden');
-    }
-});
