@@ -19,6 +19,18 @@ try {
 const auth = firebase.auth();
 const db = firebase.firestore();
 
+// Función para manejar errores de consulta
+function handleQueryError(error, fallbackFunction) {
+    if (error.code === 'failed-precondition' && error.message.includes('index')) {
+        console.warn('Índice requerido no encontrado, usando método alternativo...');
+        // Aquí podrías implementar un fallback
+        return null;
+    } else {
+        console.error('Error de Firebase:', error);
+        throw error;
+    }
+}
+
 // Función para formatear fechas
 function formatDate(date) {
     if (!date) return 'Fecha no disponible';

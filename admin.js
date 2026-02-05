@@ -11,8 +11,13 @@ const loginPasswordInput = document.getElementById('login-password');
 const loginStatus = document.getElementById('login-status');
 const newsForm = document.getElementById('news-form');
 const publishStatus = document.getElementById('publish-status');
+const adminCategoriesContainer = document.getElementById('admin-categories-container');
 const adminNewsContainer = document.getElementById('admin-news-container');
 const adminNewsLoading = document.getElementById('admin-news-loading');
+const adminCategoryDetail = document.getElementById('admin-category-detail');
+const adminCategoryNewsContainer = document.getElementById('admin-category-news-container');
+const adminCategoryTitle = document.getElementById('admin-category-title');
+const backToCategoriesAdminBtn = document.getElementById('back-to-categories-admin');
 const newsCount = document.getElementById('news-count');
 const publishNewsBtn = document.getElementById('publish-news');
 const previewNewsBtn = document.getElementById('preview-news');
@@ -28,6 +33,12 @@ const publishFromPreviewBtn = document.getElementById('publish-from-preview');
 const summaryChars = document.getElementById('summary-chars');
 const adminCategoryFilter = document.getElementById('admin-category-filter');
 const forceReloadBtn = document.getElementById('force-reload');
+const viewCategoriesBtn = document.getElementById('view-categories');
+const viewListBtn = document.getElementById('view-list');
+
+// NUEVAS REFERENCIAS para búsqueda en categoría
+const categorySearchInput = document.getElementById('category-search-input');
+const clearCategorySearchBtn = document.getElementById('clear-category-search');
 
 // Variables globales
 let isAdmin = false;
@@ -35,6 +46,41 @@ let ckeditor = null;
 let currentDraft = null;
 let isAdminLoading = false;
 let currentAdminLoadId = 0;
+let currentViewMode = 'categories';
+let currentAdminCategory = '';
+let currentCategorySearch = ''; // NUEVA VARIABLE para búsqueda en categoría
+
+// Colores para cada categoría
+const categoryColors = {
+    'Política': '#1e3c72',
+    'Tecnología': '#27ae60',
+    'Deportes': '#e74c3c',
+    'Cultura': '#9b59b6',
+    'Salud': '#3498db',
+    'Internacional': '#f39c12',
+    'Economía': '#16a085',
+    'Educación': '#8e44ad',
+    'Entretenimiento': '#e67e22',
+    'Ciencia': '#2c3e50',
+    'Ayudas': '#a04600',
+    'General': '#7f8c8d'
+};
+
+// Iconos para cada categoría
+const categoryIcons = {
+    'Política': 'fa-landmark',
+    'Tecnología': 'fa-microchip',
+    'Deportes': 'fa-futbol',
+    'Cultura': 'fa-theater-masks',
+    'Salud': 'fa-heartbeat',
+    'Internacional': 'fa-globe-americas',
+    'Economía': 'fa-chart-line',
+    'Educación': 'fa-graduation-cap',
+    'Entretenimiento': 'fa-film',
+    'Ciencia': 'fa-flask',
+    'Ayudas': 'fa-hands-helping',
+    'General': 'fa-newspaper'
+};
 
 // Inicializar CKEditor 5
 function initCKEditor() {
@@ -114,7 +160,7 @@ document.addEventListener('DOMContentLoaded', function() {
     setupEventListeners();
 });
 
-// Función para configurar event listeners una sola vez
+// Función para configurar event listeners
 function setupEventListeners() {
     // Login
     if (submitLoginBtn && !submitLoginBtn.dataset.listenerAdded) {
@@ -201,6 +247,27 @@ function setupEventListeners() {
         forceReloadBtn.addEventListener('click', forceReloadNews);
     }
     
+    // Botones de cambio de vista
+    if (viewCategoriesBtn && !viewCategoriesBtn.dataset.listenerAdded) {
+        viewCategoriesBtn.dataset.listenerAdded = 'true';
+        viewCategoriesBtn.addEventListener('click', () => {
+            switchViewMode('categories');
+        });
+    }
+    
+    if (viewListBtn && !viewListBtn.dataset.listenerAdded) {
+        viewListBtn.dataset.listenerAdded = 'true';
+        viewListBtn.addEventListener('click', () => {
+            switchViewMode('list');
+        });
+    }
+    
+    // Botón para volver a categorías desde vista detalle
+    if (backToCategoriesAdminBtn && !backToCategoriesAdminBtn.dataset.listenerAdded) {
+        backToCategoriesAdminBtn.dataset.listenerAdded = 'true';
+        backToCategoriesAdminBtn.addEventListener('click', showAdminCategoriesView);
+    }
+    
     // Modal de vista previa
     if (closePreviewBtn && !closePreviewBtn.dataset.listenerAdded) {
         closePreviewBtn.dataset.listenerAdded = 'true';
@@ -239,6 +306,108 @@ function setupEventListeners() {
             }
         });
     }
+    
+    // NUEVO: Búsqueda en categoría específica
+    let categorySearchDebounceTimer;
+    if (categorySearchInput) {
+        categorySearchInput.addEventListener('input', function() {
+            clearTimeout(categorySearchDebounceTimer);
+            const searchTerm = this.value.trim();
+            currentCategorySearch = searchTerm;
+            
+            // Mostrar/ocultar botón de limpiar
+            if (clearCategorySearchBtn) {
+                clearCategorySearchBtn.style.display = searchTerm ? 'inline-block' : 'none';
+            }
+            
+            categorySearchDebounceTimer = setTimeout(() => {
+                loadAdminCategoryNews(currentAdminCategory, searchTerm);
+            }, 500);
+        });
+        
+        // Permitir búsqueda con Enter
+        categorySearchInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                clearTimeout(categorySearchDebounceTimer);
+                const searchTerm = this.value.trim();
+                currentCategorySearch = searchTerm;
+                loadAdminCategoryNews(currentAdminCategory, searchTerm);
+            }
+        });
+    }
+    
+    // NUEVO: Botón para limpiar búsqueda en categoría
+    if (clearCategorySearchBtn && !clearCategorySearchBtn.dataset.listenerAdded) {
+        clearCategorySearchBtn.dataset.listenerAdded = 'true';
+        clearCategorySearchBtn.addEventListener('click', () => {
+            categorySearchInput.value = '';
+            currentCategorySearch = '';
+            clearCategorySearchBtn.style.display = 'none';
+            loadAdminCategoryNews(currentAdminCategory);
+        });
+    }
+}
+
+// Cambiar modo de vista
+function switchViewMode(mode) {
+    currentViewMode = mode;
+    
+    // Actualizar botones activos
+    viewCategoriesBtn.classList.toggle('active', mode === 'categories');
+    viewListBtn.classList.toggle('active', mode === 'list');
+    
+    // Mostrar/ocultar contenedores
+    if (mode === 'categories') {
+        adminCategoriesContainer.classList.remove('hidden');
+        adminNewsContainer.classList.add('hidden');
+        adminCategoryDetail.classList.add('hidden');
+        loadAdminCategories();
+    } else {
+        adminCategoriesContainer.classList.add('hidden');
+        adminNewsContainer.classList.remove('hidden');
+        adminCategoryDetail.classList.add('hidden');
+        loadAdminNewsList();
+    }
+}
+
+// Mostrar vista de categorías en admin
+function showAdminCategoriesView() {
+    adminCategoriesContainer.classList.remove('hidden');
+    adminCategoryDetail.classList.add('hidden');
+    adminNewsContainer.classList.add('hidden');
+    currentAdminCategory = '';
+    currentCategorySearch = '';
+    
+    // Resetear búsqueda
+    if (categorySearchInput) {
+        categorySearchInput.value = '';
+    }
+    if (clearCategorySearchBtn) {
+        clearCategorySearchBtn.style.display = 'none';
+    }
+    
+    loadAdminCategories();
+}
+
+// Mostrar noticias de una categoría específica en admin
+function showAdminCategoryDetail(category) {
+    currentAdminCategory = category;
+    currentCategorySearch = '';
+    
+    adminCategoriesContainer.classList.add('hidden');
+    adminCategoryDetail.classList.remove('hidden');
+    adminNewsContainer.classList.add('hidden');
+    adminCategoryTitle.textContent = category;
+    
+    // Resetear búsqueda
+    if (categorySearchInput) {
+        categorySearchInput.value = '';
+    }
+    if (clearCategorySearchBtn) {
+        clearCategorySearchBtn.style.display = 'none';
+    }
+    
+    loadAdminCategoryNews(category);
 }
 
 function showAdminUI(user) {
@@ -258,7 +427,7 @@ function showLoginUI() {
     adminPanel.classList.add('hidden');
 }
 
-// Cargar noticias para el administrador - VERSIÓN CORREGIDA SIN DUPLICADOS
+// Cargar noticias para el administrador - VERSIÓN SIN DUPLICADOS
 function loadAdminNews(searchTerm = '', category = '') {
     if (isAdminLoading) {
         console.log('Carga de admin en progreso, ignorando...');
@@ -269,12 +438,17 @@ function loadAdminNews(searchTerm = '', category = '') {
     console.log(`Iniciando carga admin #${loadId}`, { searchTerm, category });
     
     isAdminLoading = true;
-    adminNewsContainer.innerHTML = '';
+    
+    // Limpiar contenedores según la vista actual
+    if (currentViewMode === 'categories') {
+        adminCategoriesContainer.innerHTML = '';
+    } else {
+        adminNewsContainer.innerHTML = '';
+    }
+    
     adminNewsLoading.classList.remove('hidden');
     
-    let query = db.collection('news').orderBy('timestamp', 'desc');
-    
-    query.get()
+    db.collection('news').get()
         .then(querySnapshot => {
             // Verificar si es la carga más reciente
             if (loadId !== currentAdminLoadId) {
@@ -287,12 +461,16 @@ function loadAdminNews(searchTerm = '', category = '') {
             
             let totalCount = querySnapshot.size;
             let filteredCount = 0;
-            const newsToDisplay = [];
-            const seenIds = new Set();
+            const newsByCategory = {};
             const searchLower = searchTerm ? searchTerm.toLowerCase() : '';
+            const seenIds = new Set(); // Para evitar duplicados
             
             if (querySnapshot.empty) {
-                adminNewsContainer.innerHTML = '<p style="grid-column:1/-1; text-align:center; padding:30px; color:#666;">No hay noticias publicadas.</p>';
+                if (currentViewMode === 'categories') {
+                    adminCategoriesContainer.innerHTML = '<p style="grid-column:1/-1; text-align:center; padding:30px; color:#666;">No hay noticias publicadas.</p>';
+                } else {
+                    adminNewsContainer.innerHTML = '<p style="grid-column:1/-1; text-align:center; padding:30px; color:#666;">No hay noticias publicadas.</p>';
+                }
                 newsCount.textContent = '(0)';
                 isAdminLoading = false;
                 return;
@@ -302,19 +480,21 @@ function loadAdminNews(searchTerm = '', category = '') {
                 const news = doc.data();
                 news.id = doc.id;
                 
-                // Prevenir duplicados
+                // Evitar duplicados por ID
                 if (seenIds.has(news.id)) {
                     console.warn('Noticia duplicada en admin:', news.id);
                     return;
                 }
                 seenIds.add(news.id);
                 
+                // Filtrar por categoría
                 if (category && category !== '') {
                     if (!news.category || news.category.trim() !== category.trim()) {
                         return;
                     }
                 }
                 
+                // Filtrar por búsqueda
                 if (searchTerm) {
                     const titleMatch = news.title ? news.title.toLowerCase().includes(searchLower) : false;
                     const summaryMatch = news.summary ? news.summary.toLowerCase().includes(searchLower) : false;
@@ -326,45 +506,24 @@ function loadAdminNews(searchTerm = '', category = '') {
                 }
                 
                 filteredCount++;
-                newsToDisplay.push(news);
-            });
-            
-            // Ordenar por fecha
-            newsToDisplay.sort((a, b) => {
-                const dateA = a.timestamp ? (a.timestamp.toDate ? a.timestamp.toDate() : new Date(a.timestamp)) : new Date(0);
-                const dateB = b.timestamp ? (b.timestamp.toDate ? b.timestamp.toDate() : new Date(b.timestamp)) : new Date(0);
-                return dateB - dateA;
-            });
-            
-            if (newsToDisplay.length === 0) {
-                let message = 'No se encontraron noticias';
-                if (category) message += ` en la categoría "${category}"`;
-                if (searchTerm) message += ` con el término "${searchTerm}"`;
+                const cat = news.category || 'General';
                 
-                adminNewsContainer.innerHTML = `
-                    <div style="grid-column:1/-1; text-align:center; padding:30px; color:#666;">
-                        <p>${message}</p>
-                        <button id="clear-all-filters" class="back-button" style="margin-top: 15px;">
-                            <i class="fas fa-times"></i> Limpiar todos los filtros
-                        </button>
-                    </div>
-                `;
-                
-                const clearBtn = document.getElementById('clear-all-filters');
-                if (clearBtn) {
-                    clearBtn.addEventListener('click', () => {
-                        searchNewsInput.value = '';
-                        if (adminCategoryFilter) adminCategoryFilter.value = '';
-                        loadAdminNews();
-                    });
+                if (!newsByCategory[cat]) {
+                    newsByCategory[cat] = [];
                 }
-            } else {
-                newsToDisplay.forEach(news => {
-                    const newsCard = createAdminNewsCard(news);
-                    adminNewsContainer.appendChild(newsCard);
-                });
-            }
+                newsByCategory[cat].push(news);
+            });
             
+            // Ordenar noticias dentro de cada categoría por fecha
+            Object.keys(newsByCategory).forEach(cat => {
+                newsByCategory[cat].sort((a, b) => {
+                    const dateA = a.timestamp ? (a.timestamp.toDate ? a.timestamp.toDate() : new Date(a.timestamp)) : new Date(0);
+                    const dateB = b.timestamp ? (b.timestamp.toDate ? b.timestamp.toDate() : new Date(b.timestamp)) : new Date(0);
+                    return dateB - dateA;
+                });
+            });
+            
+            // Actualizar contador
             let countText = `(${filteredCount}`;
             if (filteredCount !== totalCount) {
                 countText += ` de ${totalCount}`;
@@ -372,7 +531,15 @@ function loadAdminNews(searchTerm = '', category = '') {
             countText += ')';
             newsCount.textContent = countText;
             
+            // Mostrar según el modo de vista
+            if (currentViewMode === 'categories') {
+                displayAdminCategories(newsByCategory, searchTerm);
+            } else {
+                displayAdminNewsList(newsByCategory, searchTerm);
+            }
+            
             console.log(`Carga admin #${loadId} completada: ${filteredCount} de ${totalCount}`);
+            isAdminLoading = false;
         })
         .catch(error => {
             if (loadId === currentAdminLoadId) {
@@ -380,15 +547,352 @@ function loadAdminNews(searchTerm = '', category = '') {
                 console.error('Error al cargar noticias:', error);
                 showMessage('Error al cargar las noticias', 'error');
             }
-        })
-        .finally(() => {
-            if (loadId === currentAdminLoadId) {
-                isAdminLoading = false;
-            }
+            isAdminLoading = false;
         });
 }
 
-// Crear tarjeta de noticia para el administrador
+// Cargar categorías para vista de admin
+function loadAdminCategories() {
+    loadAdminNews(searchNewsInput.value, adminCategoryFilter ? adminCategoryFilter.value : '');
+}
+
+// Cargar lista de noticias para vista de admin
+function loadAdminNewsList() {
+    loadAdminNews(searchNewsInput.value, adminCategoryFilter ? adminCategoryFilter.value : '');
+}
+
+// Cargar noticias de una categoría específica en admin - VERSIÓN CON BÚSQUEDA
+function loadAdminCategoryNews(category, searchTerm = '') {
+    if (isAdminLoading) {
+        console.log('Carga de admin en progreso, ignorando...');
+        return;
+    }
+    
+    const loadId = ++currentAdminLoadId;
+    console.log(`Iniciando carga categoría admin #${loadId} para: "${category}" con búsqueda: "${searchTerm}"`);
+    
+    isAdminLoading = true;
+    adminCategoryNewsContainer.innerHTML = '';
+    adminNewsLoading.classList.remove('hidden');
+    
+    db.collection('news').get()
+        .then(querySnapshot => {
+            // Verificar si es la carga más reciente
+            if (loadId !== currentAdminLoadId) {
+                console.log(`Carga categoría admin #${loadId} obsoleta`);
+                isAdminLoading = false;
+                return;
+            }
+            
+            adminNewsLoading.classList.add('hidden');
+            
+            if (querySnapshot.empty) {
+                adminCategoryNewsContainer.innerHTML = '<p style="grid-column:1/-1; text-align:center; padding:30px; color:#666;">No hay noticias en esta categoría.</p>';
+                isAdminLoading = false;
+                return;
+            }
+            
+            const newsList = [];
+            const searchLower = searchTerm ? searchTerm.toLowerCase() : '';
+            const seenIds = new Set(); // Para evitar duplicados
+            
+            querySnapshot.forEach(doc => {
+                const news = doc.data();
+                news.id = doc.id;
+                
+                // Evitar duplicados por ID
+                if (seenIds.has(news.id)) {
+                    console.warn('Noticia duplicada en admin categoría:', news.id);
+                    return;
+                }
+                seenIds.add(news.id);
+                
+                // Filtrar por categoría
+                if (!news.category || news.category.trim() !== category.trim()) {
+                    return;
+                }
+                
+                // Filtrar por búsqueda si existe
+                if (searchTerm && searchTerm !== '') {
+                    const titleMatch = news.title ? news.title.toLowerCase().includes(searchLower) : false;
+                    const summaryMatch = news.summary ? news.summary.toLowerCase().includes(searchLower) : false;
+                    const tagsMatch = news.tags ? news.tags.toLowerCase().includes(searchLower) : false;
+                    
+                    if (!titleMatch && !summaryMatch && !tagsMatch) {
+                        return;
+                    }
+                }
+                
+                newsList.push(news);
+            });
+            
+            // Ordenar por fecha
+            newsList.sort((a, b) => {
+                const dateA = a.timestamp ? (a.timestamp.toDate ? a.timestamp.toDate() : new Date(a.timestamp)) : new Date(0);
+                const dateB = b.timestamp ? (b.timestamp.toDate ? b.timestamp.toDate() : new Date(b.timestamp)) : new Date(0);
+                return dateB - dateA;
+            });
+            
+            // Mostrar noticias
+            if (newsList.length === 0) {
+                let message = `No hay noticias en la categoría "${category}"`;
+                if (searchTerm) {
+                    message += ` con el término "${searchTerm}"`;
+                }
+                
+                adminCategoryNewsContainer.innerHTML = `
+                    <div class="category-no-results">
+                        <i class="fas fa-search"></i>
+                        <h4>${message}</h4>
+                        ${searchTerm ? 
+                            `<button id="clear-current-category-search" class="back-to-all-category">
+                                <i class="fas fa-times"></i> Mostrar todas las noticias de ${category}
+                            </button>` 
+                            : ''
+                        }
+                    </div>
+                `;
+                
+                // Agregar event listener al botón de limpiar búsqueda si existe
+                const clearBtn = document.getElementById('clear-current-category-search');
+                if (clearBtn && !clearBtn.dataset.listenerAdded) {
+                    clearBtn.dataset.listenerAdded = 'true';
+                    clearBtn.addEventListener('click', () => {
+                        categorySearchInput.value = '';
+                        currentCategorySearch = '';
+                        clearCategorySearchBtn.style.display = 'none';
+                        loadAdminCategoryNews(category);
+                    });
+                }
+            } else {
+                // Mostrar contador de resultados si hay búsqueda
+                if (searchTerm) {
+                    const resultsInfo = document.createElement('div');
+                    resultsInfo.className = 'category-search-results';
+                    resultsInfo.innerHTML = `
+                        <i class="fas fa-search"></i>
+                        <span>Mostrando <strong>${newsList.length}</strong> noticia${newsList.length !== 1 ? 's' : ''} 
+                        ${searchTerm ? `con el término "<strong>${searchTerm}</strong>"` : ''}</span>
+                    `;
+                    adminCategoryNewsContainer.appendChild(resultsInfo);
+                }
+                
+                const seenCardIds = new Set(); // Para evitar tarjetas duplicadas
+                newsList.forEach(news => {
+                    if (!seenCardIds.has(news.id)) {
+                        seenCardIds.add(news.id);
+                        const newsCard = createAdminNewsCard(news);
+                        adminCategoryNewsContainer.appendChild(newsCard);
+                    }
+                });
+            }
+            
+            console.log(`Carga categoría admin #${loadId} completada: ${newsList.length} noticias`);
+            isAdminLoading = false;
+        })
+        .catch(error => {
+            if (loadId === currentAdminLoadId) {
+                adminNewsLoading.classList.add('hidden');
+                console.error('Error al cargar noticias de categoría:', error);
+                showMessage('Error al cargar las noticias', 'error');
+            }
+            isAdminLoading = false;
+        });
+}
+
+// Mostrar categorías en admin
+function displayAdminCategories(newsByCategory, searchTerm = '') {
+    adminCategoriesContainer.innerHTML = '';
+    
+    if (Object.keys(newsByCategory).length === 0) {
+        let message = 'No se encontraron noticias';
+        if (adminCategoryFilter.value) message += ` en la categoría "${adminCategoryFilter.value}"`;
+        if (searchTerm) message += ` con el término "${searchTerm}"`;
+        
+        adminCategoriesContainer.innerHTML = `
+            <div class="no-results-message">
+                <i class="fas fa-search"></i>
+                <h3>${message}</h3>
+                <button id="clear-all-filters-admin" class="back-button">
+                    <i class="fas fa-times"></i> Limpiar filtros
+                </button>
+            </div>
+        `;
+        
+        const clearBtn = document.getElementById('clear-all-filters-admin');
+        if (clearBtn && !clearBtn.dataset.listenerAdded) {
+            clearBtn.dataset.listenerAdded = 'true';
+            clearBtn.addEventListener('click', () => {
+                searchNewsInput.value = '';
+                if (adminCategoryFilter) adminCategoryFilter.value = '';
+                loadAdminNews();
+            });
+        }
+        return;
+    }
+    
+    // Crear tarjetas de categorías
+    Object.keys(newsByCategory).forEach(categoryName => {
+        const categoryNews = newsByCategory[categoryName];
+        const categoryCard = createAdminCategoryCard(categoryName, categoryNews);
+        adminCategoriesContainer.appendChild(categoryCard);
+    });
+}
+
+// Mostrar lista de noticias en admin
+function displayAdminNewsList(newsByCategory, searchTerm = '') {
+    adminNewsContainer.innerHTML = '';
+    
+    // Combinar todas las noticias en una lista
+    const allNews = [];
+    Object.keys(newsByCategory).forEach(category => {
+        allNews.push(...newsByCategory[category]);
+    });
+    
+    // Ordenar por fecha (más reciente primero)
+    allNews.sort((a, b) => {
+        const dateA = a.timestamp ? (a.timestamp.toDate ? a.timestamp.toDate() : new Date(a.timestamp)) : new Date(0);
+        const dateB = b.timestamp ? (b.timestamp.toDate ? b.timestamp.toDate() : new Date(b.timestamp)) : new Date(0);
+        return dateB - dateA;
+    });
+    
+    if (allNews.length === 0) {
+        let message = 'No se encontraron noticias';
+        if (adminCategoryFilter.value) message += ` en la categoría "${adminCategoryFilter.value}"`;
+        if (searchTerm) message += ` con el término "${searchTerm}"`;
+        
+        adminNewsContainer.innerHTML = `
+            <div class="no-results-message">
+                <i class="fas fa-search"></i>
+                <h3>${message}</h3>
+                <button id="clear-all-filters-list" class="back-button">
+                    <i class="fas fa-times"></i> Limpiar filtros
+                </button>
+            </div>
+        `;
+        
+        const clearBtn = document.getElementById('clear-all-filters-list');
+        if (clearBtn && !clearBtn.dataset.listenerAdded) {
+            clearBtn.dataset.listenerAdded = 'true';
+            clearBtn.addEventListener('click', () => {
+                searchNewsInput.value = '';
+                if (adminCategoryFilter) adminCategoryFilter.value = '';
+                loadAdminNews();
+            });
+        }
+        return;
+    }
+    
+    // Mostrar todas las noticias en grid (evitar duplicados por ID)
+    const seenCardIds = new Set();
+    allNews.forEach(news => {
+        if (!seenCardIds.has(news.id)) {
+            seenCardIds.add(news.id);
+            const newsCard = createAdminNewsCard(news);
+            adminNewsContainer.appendChild(newsCard);
+        }
+    });
+}
+
+// Crear tarjeta de categoría para admin
+function createAdminCategoryCard(categoryName, newsList) {
+    const card = document.createElement('div');
+    card.className = 'category-card';
+    const categoryColor = categoryColors[categoryName] || '#4a6fc1';
+    const categoryIcon = categoryIcons[categoryName] || 'fa-folder';
+    
+    card.innerHTML = `
+        <div class="category-card-header" style="background-color: ${categoryColor}">
+            <div class="category-icon">
+                <i class="fas ${categoryIcon}"></i>
+            </div>
+            <h3 class="category-card-title">${categoryName}</h3>
+            <span class="category-count">${newsList.length} noticia${newsList.length !== 1 ? 's' : ''}</span>
+        </div>
+        <div class="category-card-body">
+            <div class="category-news-list">
+                ${newsList.slice(0, 3).map(news => `
+                    <div class="category-news-item-admin" data-id="${news.id}">
+                        <div class="category-news-image" style="background-image: url('${news.imageUrl || DEFAULT_IMAGE}')"></div>
+                        <div class="category-news-content">
+                            <h4 class="category-news-title">${news.title}</h4>
+                            <div class="category-news-date">
+                                <i class="far fa-calendar-alt"></i>
+                                ${formatShortDate(news.timestamp)}
+                            </div>
+                            <div class="category-news-actions">
+                                <button class="edit-news-admin" data-id="${news.id}">
+                                    <i class="fas fa-edit"></i> Editar
+                                </button>
+                                <button class="delete-news-admin" data-id="${news.id}">
+                                    <i class="fas fa-trash"></i> Eliminar
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `).join('')}
+            </div>
+        </div>
+        <div class="category-card-footer">
+            <button class="view-category-btn-admin" data-category="${categoryName}">
+                Ver todas las noticias de ${categoryName}
+                <i class="fas fa-arrow-right"></i>
+            </button>
+        </div>
+    `;
+    
+    // Agregar event listeners (solo una vez)
+    const viewBtn = card.querySelector('.view-category-btn-admin');
+    if (viewBtn && !viewBtn.dataset.listenerAdded) {
+        viewBtn.dataset.listenerAdded = 'true';
+        viewBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            const category = this.getAttribute('data-category');
+            showAdminCategoryDetail(category);
+        });
+    }
+    
+    // Agregar listeners a los botones de editar/eliminar (solo una vez)
+    const editBtns = card.querySelectorAll('.edit-news-admin');
+    editBtns.forEach(btn => {
+        if (!btn.dataset.listenerAdded) {
+            btn.dataset.listenerAdded = 'true';
+            btn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                const newsId = this.getAttribute('data-id');
+                editNews(newsId);
+            });
+        }
+    });
+    
+    const deleteBtns = card.querySelectorAll('.delete-news-admin');
+    deleteBtns.forEach(btn => {
+        if (!btn.dataset.listenerAdded) {
+            btn.dataset.listenerAdded = 'true';
+            btn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                const newsId = this.getAttribute('data-id');
+                deleteNews(newsId);
+            });
+        }
+    });
+    
+    // Listener para la noticia completa (solo una vez)
+    const newsItems = card.querySelectorAll('.category-news-item-admin');
+    newsItems.forEach(item => {
+        if (!item.dataset.listenerAdded) {
+            item.dataset.listenerAdded = 'true';
+            item.addEventListener('click', function() {
+                const newsId = this.getAttribute('data-id');
+                window.open(`index.html?news=${newsId}`, '_blank');
+            });
+        }
+    });
+    
+    return card;
+}
+
+// Crear tarjeta de noticia para admin (lista o categoría)
 function createAdminNewsCard(news) {
     const card = document.createElement('div');
     card.className = 'news-card';
@@ -424,7 +928,7 @@ function createAdminNewsCard(news) {
         </div>
     `;
     
-    // Agregar event listeners únicos
+    // Agregar event listeners (solo una vez)
     const deleteBtn = card.querySelector('.delete-news');
     if (deleteBtn && !deleteBtn.dataset.listenerAdded) {
         deleteBtn.dataset.listenerAdded = 'true';
@@ -445,7 +949,7 @@ function createAdminNewsCard(news) {
         });
     }
     
-    // Listener para la tarjeta
+    // Listener para la tarjeta (solo una vez)
     if (!card.dataset.listenerAdded) {
         card.dataset.listenerAdded = 'true';
         card.addEventListener('click', () => {
@@ -861,17 +1365,4 @@ function forceReloadNews() {
     currentAdminLoadId = 0;
     loadAdminNews(searchNewsInput.value, adminCategoryFilter ? adminCategoryFilter.value : '');
     showMessage('Recarga forzada completada', 'success');
-}
-
-// Función debounce
-function debounce(func, wait) {
-    let timeout;
-    return function executedFunction(...args) {
-        const later = () => {
-            clearTimeout(timeout);
-            func(...args);
-        };
-        clearTimeout(timeout);
-        timeout = setTimeout(later, wait);
-    };
 }

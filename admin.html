@@ -71,6 +71,7 @@
                             <option value="Educación">Educación</option>
                             <option value="Entretenimiento">Entretenimiento</option>
                             <option value="Ciencia">Ciencia</option>
+                            <option value="Ayudas">Ayudas Sociales</option>
                         </select>
                     </div>
                 </div>
@@ -129,16 +130,13 @@
                 </div>
             </form>
             
-            <!-- Lista de noticias publicadas (solo para admin) -->
+            <!-- Noticias publicadas agrupadas por categorías -->
             <div class="published-news">
-                <h3 class="section-title">Noticias Publicadas <span id="news-count">(0)</span></h3>
-                <!-- En la sección de published-news -->
-                <!-- En la sección de published-news, REEMPLAZAR el news-actions con esto: -->
+                <h3 class="section-title">Noticias Publicadas por Categorías <span id="news-count">(0)</span></h3>
                 <div class="news-actions">
                     <button id="refresh-news" class="refresh-btn">
                         <i class="fas fa-sync-alt"></i> Actualizar Lista
                     </button>
-                    <!-- Agregar después del botón de Actualizar Lista -->
                     <button id="force-reload" class="refresh-btn" title="Forzar recarga completa">
                         <i class="fas fa-redo-alt"></i> Recarga Forzada
                     </button>
@@ -155,6 +153,7 @@
                             <option value="Educación">Educación</option>
                             <option value="Entretenimiento">Entretenimiento</option>
                             <option value="Ciencia">Ciencia</option>
+                            <option value="Ayudas">Ayudas Sociales</option>
                         </select>
                         <div class="search-box">
                             <input type="text" id="search-news" placeholder="Buscar noticias...">
@@ -162,11 +161,50 @@
                         </div>
                     </div>
                 </div>
+                
+                <!-- Botones para cambiar vista -->
+                <div class="view-toggle">
+                    <button id="view-categories" class="view-toggle-btn active">
+                        <i class="fas fa-th-large"></i> Vista por Categorías
+                    </button>
+                    <button id="view-list" class="view-toggle-btn">
+                        <i class="fas fa-list"></i> Vista de Lista
+                    </button>
+                </div>
+                
                 <div id="admin-news-loading" class="loading">
                     <i class="fas fa-spinner fa-spin"></i>
                     <p>Cargando noticias...</p>
                 </div>
-                <div id="admin-news-container" class="news-grid"></div>
+                
+                <!-- Contenedor para vista de categorías -->
+                <div id="admin-categories-container" class="categories-grid"></div>
+                
+                <!-- Contenedor para vista de lista (oculto por defecto) -->
+                <div id="admin-news-container" class="news-grid hidden"></div>
+                <!-- En admin.html, dentro de #admin-category-detail y #admin-news-container -->
+
+                <!-- Contenedor para vista de categoría específica (oculto por defecto) -->
+                <div id="admin-category-detail" class="hidden">
+                    <div class="category-detail-header">
+                        <button id="back-to-categories-admin" class="back-button">
+                            <i class="fas fa-arrow-left"></i> Volver a categorías
+                        </button>
+                        <h4 id="admin-category-title">Categoría</h4>
+                    </div>
+                    <!-- Sección de búsqueda dentro de la categoría -->
+                    <div class="category-search-section">
+                        <div class="search-box">
+                            <input type="text" id="category-search-input" placeholder="Buscar noticias en esta categoría...">
+                            <i class="fas fa-search"></i>
+                        </div>
+                        <button id="clear-category-search" class="clear-filter-btn" style="display: none;">
+                            <i class="fas fa-times"></i> Limpiar búsqueda
+                        </button>
+                    </div>
+                    
+                    <div id="admin-category-news-container" class="news-grid"></div>
+                </div>
             </div>
         </section>
         

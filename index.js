@@ -1,11 +1,16 @@
 // Referencias a elementos del DOM
-const newsContainer = document.getElementById('news-container');
-const newsLoading = document.getElementById('news-loading');
-const goHome = document.getElementById('go-home');
-const backButton = document.getElementById('back-button');
-const backToList = document.getElementById('back-to-list');
-const newsSection = document.getElementById('news-section');
+const categoriesSection = document.getElementById('categories-section');
+const categoryDetailSection = document.getElementById('category-detail-section');
 const newsDetailSection = document.getElementById('news-detail-section');
+const categoriesContainer = document.getElementById('categories-container');
+const categoriesLoading = document.getElementById('categories-loading');
+const categoryNewsContainer = document.getElementById('category-news-container');
+const categoryNewsLoading = document.getElementById('category-news-loading');
+const categoryTitle = document.getElementById('category-title');
+const backToCategoriesBtn = document.getElementById('back-to-categories');
+const backButton = document.getElementById('back-button');
+const goHome = document.getElementById('go-home');
+const searchInput = document.getElementById('search-input');
 const newsDetailLoading = document.getElementById('news-detail-loading');
 const newsDetailContainer = document.getElementById('news-detail-container');
 const newsDetailTitle = document.getElementById('news-detail-title');
@@ -16,18 +21,53 @@ const newsDetailImage = document.getElementById('news-detail-image');
 const newsDetailSummary = document.getElementById('news-detail-summary');
 const newsDetailContent = document.getElementById('news-detail-content');
 const shareNewsBtn = document.getElementById('share-news');
-const categoryFilterSelect = document.getElementById('category-filter-select');
 const filterStats = document.getElementById('filter-stats');
-const searchInput = document.getElementById('search-input');
 
-let currentNewsId = null;
+// NUEVAS REFERENCIAS para búsqueda en categoría
+const categorySearchInput = document.getElementById('category-search-input');
+const clearCategorySearchBtn = document.getElementById('clear-category-search-public');
+
 let currentCategory = '';
 let currentSearch = '';
+let currentCategorySearch = ''; // NUEVA VARIABLE para búsqueda en categoría
+let currentNewsId = null;
 let debounceTimer;
 let isLoading = false;
 let currentLoadId = 0;
 
-// Cargar noticias al cargar la página
+// Colores para cada categoría
+const categoryColors = {
+    'Política': '#1e3c72',
+    'Tecnología': '#27ae60',
+    'Deportes': '#e74c3c',
+    'Cultura': '#9b59b6',
+    'Salud': '#3498db',
+    'Internacional': '#f39c12',
+    'Economía': '#16a085',
+    'Educación': '#2c989c',
+    'Entretenimiento': '#e67e22',
+    'Ciencia': '#2c3e50',
+    'Ayudas': '#a04600',
+    'General': '#7f8c8d'
+};
+
+// Iconos para cada categoría
+const categoryIcons = {
+    'Política': 'fa-landmark',
+    'Tecnología': 'fa-microchip',
+    'Deportes': 'fa-futbol',
+    'Cultura': 'fa-theater-masks',
+    'Salud': 'fa-heartbeat',
+    'Internacional': 'fa-globe-americas',
+    'Economía': 'fa-chart-line',
+    'Educación': 'fa-graduation-cap',
+    'Entretenimiento': 'fa-film',
+    'Ciencia': 'fa-flask',
+    'Ayudas': 'fa-hands-helping',
+    'General': 'fa-newspaper'
+};
+
+// Cargar categorías al cargar la página
 document.addEventListener('DOMContentLoaded', function() {
     // Cargar parámetros de URL
     const urlParams = new URLSearchParams(window.location.search);
@@ -37,19 +77,14 @@ document.addEventListener('DOMContentLoaded', function() {
     
     if (newsParam) {
         showNewsDetail(newsParam);
+    } else if (categoryParam) {
+        showCategoryDetail(categoryParam);
     } else {
-        // Solo cargar noticias si no estamos en vista detalle
-        if (categoryParam) {
-            categoryFilterSelect.value = categoryParam;
-            currentCategory = categoryParam;
-        }
-        
         if (searchParam) {
             searchInput.value = searchParam;
             currentSearch = searchParam;
         }
-        
-        loadNews(currentCategory, currentSearch);
+        loadCategories(currentSearch);
     }
 
     // Configurar búsqueda con debounce
@@ -59,9 +94,7 @@ document.addEventListener('DOMContentLoaded', function() {
             
             debounceTimer = setTimeout(() => {
                 currentSearch = this.value.trim();
-                loadNews(currentCategory, currentSearch);
-                
-                // Actualizar URL
+                loadCategories(currentSearch);
                 updateURL();
             }, 500);
         });
@@ -71,25 +104,58 @@ document.addEventListener('DOMContentLoaded', function() {
             if (e.key === 'Enter') {
                 clearTimeout(debounceTimer);
                 currentSearch = this.value.trim();
-                loadNews(currentCategory, currentSearch);
+                loadCategories(currentSearch);
                 updateURL();
             }
         });
     }
+    
+    // Configurar búsqueda en categoría
+    setupCategorySearch();
+});
 
-    // Configurar filtro de categoría
-    if (categoryFilterSelect) {
-        categoryFilterSelect.addEventListener('change', function() {
-            clearTimeout(debounceTimer);
+// Función para configurar la búsqueda en categoría
+function setupCategorySearch() {
+    let categorySearchDebounceTimer;
+    
+    if (categorySearchInput) {
+        categorySearchInput.addEventListener('input', function() {
+            clearTimeout(categorySearchDebounceTimer);
+            const searchTerm = this.value.trim();
+            currentCategorySearch = searchTerm;
             
-            debounceTimer = setTimeout(() => {
-                currentCategory = this.value;
-                loadNews(currentCategory, currentSearch);
-                updateURL();
-            }, 300);
+            // Mostrar/ocultar botón de limpiar
+            if (clearCategorySearchBtn) {
+                clearCategorySearchBtn.style.display = searchTerm ? 'inline-block' : 'none';
+            }
+            
+            categorySearchDebounceTimer = setTimeout(() => {
+                loadCategoryNews(currentCategory, searchTerm);
+            }, 500);
+        });
+        
+        // Permitir búsqueda con Enter
+        categorySearchInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                clearTimeout(categorySearchDebounceTimer);
+                const searchTerm = this.value.trim();
+                currentCategorySearch = searchTerm;
+                loadCategoryNews(currentCategory, searchTerm);
+            }
         });
     }
-});
+    
+    // Botón para limpiar búsqueda en categoría
+    if (clearCategorySearchBtn && !clearCategorySearchBtn.dataset.listenerAdded) {
+        clearCategorySearchBtn.dataset.listenerAdded = 'true';
+        clearCategorySearchBtn.addEventListener('click', () => {
+            categorySearchInput.value = '';
+            currentCategorySearch = '';
+            clearCategorySearchBtn.style.display = 'none';
+            loadCategoryNews(currentCategory);
+        });
+    }
+}
 
 // Función para actualizar URL
 function updateURL() {
@@ -115,8 +181,8 @@ function updateURL() {
     }
 }
 
-// Cargar noticias desde Firestore - VERSIÓN CORREGIDA SIN DUPLICADOS
-function loadNews(category = '', search = '') {
+// Cargar categorías con noticias - VERSIÓN SIN DUPLICADOS
+function loadCategories(search = '') {
     // Prevenir múltiples cargas simultáneas
     if (isLoading) {
         console.log('Ya se está cargando, ignorando llamada duplicada');
@@ -124,58 +190,55 @@ function loadNews(category = '', search = '') {
     }
     
     const loadId = ++currentLoadId;
-    console.log(`Iniciando carga #${loadId} con categoría: "${category}", búsqueda: "${search}"`);
+    console.log(`Iniciando carga categorías #${loadId} con búsqueda: "${search}"`);
     
     isLoading = true;
-    newsContainer.innerHTML = '';
-    newsLoading.classList.remove('hidden');
+    categoriesContainer.innerHTML = '';
+    categoriesLoading.classList.remove('hidden');
+    filterStats.innerHTML = '';
     
-    let query = db.collection('news').orderBy('timestamp', 'desc');
-    
-    query.get()
+    db.collection('news').get()
         .then(querySnapshot => {
-            // Verificar si esta es la carga más reciente
+            // Verificar si es la carga más reciente
             if (loadId !== currentLoadId) {
-                console.log(`Carga #${loadId} obsoleta, ignorando`);
+                console.log(`Carga categorías #${loadId} obsoleta, ignorando`);
                 isLoading = false;
                 return;
             }
             
-            newsLoading.classList.add('hidden');
+            categoriesLoading.classList.add('hidden');
             
             if (querySnapshot.empty) {
-                newsContainer.innerHTML = '<p style="grid-column:1/-1; text-align:center; padding:30px; color:#666;">No hay noticias publicadas aún.</p>';
-                updateFilterStats(0, 0, category, search);
+                categoriesContainer.innerHTML = `
+                    <div class="no-results-message">
+                        <i class="fas fa-newspaper"></i>
+                        <h3>No hay noticias publicadas aún</h3>
+                        <p>Vuelve más tarde o publica nuevas noticias desde el modo administrador</p>
+                    </div>
+                `;
                 isLoading = false;
                 return;
             }
             
-            let totalNews = 0;
+            // Agrupar noticias por categoría
+            const newsByCategory = {};
+            const totalNews = querySnapshot.size;
             let filteredNews = 0;
-            const newsToDisplay = [];
-            const seenIds = new Set();
             const searchLower = search ? search.toLowerCase() : '';
+            const seenIds = new Set(); // Para evitar duplicados por ID
             
             querySnapshot.forEach(doc => {
-                totalNews++;
                 const news = doc.data();
                 news.id = doc.id;
                 
-                // Verificar duplicados por ID
+                // Evitar duplicados por ID
                 if (seenIds.has(news.id)) {
                     console.warn('Noticia duplicada ignorada:', news.id);
                     return;
                 }
                 seenIds.add(news.id);
                 
-                // FILTRO POR CATEGORÍA
-                if (category && category !== '') {
-                    if (!news.category || news.category.trim() !== category.trim()) {
-                        return;
-                    }
-                }
-                
-                // FILTRO POR BÚSQUEDA
+                // Filtrar por búsqueda si existe
                 if (search && search !== '') {
                     const titleMatch = news.title ? news.title.toLowerCase().includes(searchLower) : false;
                     const summaryMatch = news.summary ? news.summary.toLowerCase().includes(searchLower) : false;
@@ -188,39 +251,61 @@ function loadNews(category = '', search = '') {
                 }
                 
                 filteredNews++;
-                newsToDisplay.push(news);
-            });
-            
-            // Ordenar por fecha
-            newsToDisplay.sort((a, b) => {
-                const dateA = a.timestamp ? (a.timestamp.toDate ? a.timestamp.toDate() : new Date(a.timestamp)) : new Date(0);
-                const dateB = b.timestamp ? (b.timestamp.toDate ? b.timestamp.toDate() : new Date(b.timestamp)) : new Date(0);
-                return dateB - dateA;
-            });
-            
-            // Mostrar noticias
-            newsToDisplay.forEach(news => {
-                const newsCard = createNewsCard(news, search);
-                if (newsCard) {
-                    newsContainer.appendChild(newsCard);
-                }
-            });
-            
-            updateFilterStats(totalNews, filteredNews, category, search);
-            
-            // Mostrar mensaje si no hay resultados
-            if (filteredNews === 0 && (category || search)) {
-                let message = 'No se encontraron noticias';
-                if (category) message += ` en la categoría "${category}"`;
-                if (search) message += ` con el término "${search}"`;
+                const category = news.category || 'General';
                 
-                newsContainer.innerHTML = `
+                if (!newsByCategory[category]) {
+                    newsByCategory[category] = [];
+                }
+                
+                // Agregar noticia a la categoría
+                newsByCategory[category].push(news);
+            });
+            
+            // Ordenar noticias dentro de cada categoría por fecha (más reciente primero)
+            Object.keys(newsByCategory).forEach(category => {
+                newsByCategory[category].sort((a, b) => {
+                    const dateA = a.timestamp ? (a.timestamp.toDate ? a.timestamp.toDate() : new Date(a.timestamp)) : new Date(0);
+                    const dateB = b.timestamp ? (b.timestamp.toDate ? b.timestamp.toDate() : new Date(b.timestamp)) : new Date(0);
+                    return dateB - dateA;
+                });
+                
+                // Mantener solo las 3 noticias más recientes por categoría para la vista principal
+                newsByCategory[category] = newsByCategory[category].slice(0, 3);
+            });
+            
+            // Mostrar estadísticas si hay búsqueda
+            if (search) {
+                filterStats.innerHTML = `
+                    <span class="filter-info">
+                        <i class="fas fa-search"></i> 
+                        Búsqueda: <strong>"${search}"</strong> - 
+                        Encontradas ${filteredNews} noticias en ${Object.keys(newsByCategory).length} categorías
+                        <button id="clear-search-btn" class="clear-filter-btn">
+                            <i class="fas fa-times"></i> Limpiar búsqueda
+                        </button>
+                    </span>
+                `;
+                
+                const clearBtn = document.getElementById('clear-search-btn');
+                if (clearBtn) {
+                    clearBtn.addEventListener('click', () => {
+                        searchInput.value = '';
+                        currentSearch = '';
+                        loadCategories('');
+                        updateURL();
+                    });
+                }
+            }
+            
+            // Si no hay noticias después del filtro
+            if (filteredNews === 0 && search) {
+                categoriesContainer.innerHTML = `
                     <div class="no-results-message">
                         <i class="fas fa-search"></i>
-                        <h3>${message}</h3>
-                        <p>Intenta con otros términos de búsqueda o cambia de categoría</p>
+                        <h3>No se encontraron noticias</h3>
+                        <p>No hay noticias con el término "${search}"</p>
                         <button id="clear-filters" class="back-button">
-                            <i class="fas fa-times"></i> Limpiar filtros
+                            <i class="fas fa-times"></i> Limpiar búsqueda
                         </button>
                     </div>
                 `;
@@ -228,41 +313,292 @@ function loadNews(category = '', search = '') {
                 const clearBtn = document.getElementById('clear-filters');
                 if (clearBtn) {
                     clearBtn.addEventListener('click', () => {
-                        categoryFilterSelect.value = '';
                         searchInput.value = '';
-                        currentCategory = '';
                         currentSearch = '';
-                        loadNews();
-                        filterStats.innerHTML = '';
+                        loadCategories('');
                         updateURL();
                     });
                 }
+                isLoading = false;
+                return;
             }
             
-            console.log(`Carga #${loadId} completada: ${filteredNews} de ${totalNews} noticias mostradas`);
+            // Crear tarjetas de categorías
+            Object.keys(newsByCategory).forEach(categoryName => {
+                const categoryNews = newsByCategory[categoryName];
+                const categoryCard = createCategoryCard(categoryName, categoryNews);
+                categoriesContainer.appendChild(categoryCard);
+            });
+            
+            isLoading = false;
+            console.log(`Carga categorías #${loadId} completada: ${filteredNews} noticias en ${Object.keys(newsByCategory).length} categorías`);
         })
         .catch(error => {
-            // Solo procesar errores de la carga más reciente
             if (loadId === currentLoadId) {
-                newsLoading.classList.add('hidden');
-                console.error('Error detallado al cargar noticias:', error);
-                newsContainer.innerHTML = `
+                categoriesLoading.classList.add('hidden');
+                console.error('Error al cargar noticias:', error);
+                categoriesContainer.innerHTML = `
+                    <div style="grid-column:1/-1; text-align:center; padding:30px; color:#c0392b;">
+                        <h3>Error al cargar las noticias</h3>
+                        <p>${error.message}</p>
+                        <p style="margin-top: 10px; font-size: 0.9rem;">
+                            <strong>Solución:</strong> Ve a 
+                            <a href="https://console.firebase.google.com/v1/r/project/noticias-seguridad/firestore/indexes?create_composite=Ck9wcm9qZWN0cy9ub3RpY2lhcy1zZWd1cmlkYWQvZGF0YWJhc2VzLyhkZWZhdWx0KS9jb2xsZWN0aW9uR3JvdXBzL25ld3MvaW5kZXhlcy9fEAEaDAoIY2F0ZWdvcnkQARoNCgl0aW1lc3RhbXAQAhoMCghfX25hbWVfXxAC" 
+                               target="_blank" style="color: #4a6fc1; text-decoration: underline;">
+                                este enlace
+                            </a> 
+                            y haz clic en "Crear índice". Luego espera unos minutos y recarga.
+                        </p>
+                    </div>
+                `;
+            }
+            isLoading = false;
+        });
+}
+
+// Crear tarjeta de categoría
+function createCategoryCard(categoryName, newsList) {
+    const card = document.createElement('div');
+    card.className = 'category-card';
+    const categoryColor = categoryColors[categoryName] || '#4a6fc1';
+    const categoryIcon = categoryIcons[categoryName] || 'fa-folder';
+    
+    card.innerHTML = `
+        <div class="category-card-header" style="background-color: ${categoryColor}">
+            <div class="category-icon">
+                <i class="fas ${categoryIcon}"></i>
+            </div>
+            <h3 class="category-card-title">${categoryName}</h3>
+            <span class="category-count">${newsList.length} noticia${newsList.length !== 1 ? 's' : ''}</span>
+        </div>
+        <div class="category-card-body">
+            <div class="category-news-list">
+                ${newsList.map(news => `
+                    <div class="category-news-item" data-id="${news.id}">
+                        <div class="category-news-image" style="background-image: url('${news.imageUrl || DEFAULT_IMAGE}')"></div>
+                        <div class="category-news-content">
+                            <h4 class="category-news-title">${news.title}</h4>
+                            <div class="category-news-date">
+                                <i class="far fa-calendar-alt"></i>
+                                ${formatShortDate(news.timestamp)}
+                            </div>
+                        </div>
+                    </div>
+                `).join('')}
+            </div>
+        </div>
+        <div class="category-card-footer">
+            <button class="view-category-btn" data-category="${categoryName}">
+                Ver todas las noticias de ${categoryName}
+                <i class="fas fa-arrow-right"></i>
+            </button>
+        </div>
+    `;
+    
+    // Agregar event listeners (solo una vez)
+    const viewBtn = card.querySelector('.view-category-btn');
+    if (viewBtn && !viewBtn.dataset.listenerAdded) {
+        viewBtn.dataset.listenerAdded = 'true';
+        viewBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            const category = this.getAttribute('data-category');
+            showCategoryDetail(category);
+        });
+    }
+    
+    // Agregar listeners a cada noticia individual (solo una vez)
+    const newsItems = card.querySelectorAll('.category-news-item');
+    newsItems.forEach(item => {
+        if (!item.dataset.listenerAdded) {
+            item.dataset.listenerAdded = 'true';
+            item.addEventListener('click', function() {
+                const newsId = this.getAttribute('data-id');
+                showNewsDetail(newsId);
+            });
+        }
+    });
+    
+    return card;
+}
+
+// Mostrar detalles de una categoría - VERSIÓN CON BÚSQUEDA
+function showCategoryDetail(category) {
+    currentCategory = category;
+    currentCategorySearch = '';
+    
+    categoriesSection.classList.add('hidden');
+    categoryDetailSection.classList.remove('hidden');
+    categoryTitle.textContent = category;
+    
+    // Resetear búsqueda en categoría
+    if (categorySearchInput) {
+        categorySearchInput.value = '';
+    }
+    if (clearCategorySearchBtn) {
+        clearCategorySearchBtn.style.display = 'none';
+    }
+    
+    const newUrl = window.location.origin + window.location.pathname + '?category=' + encodeURIComponent(category);
+    window.history.pushState({ category, search: currentSearch }, '', newUrl);
+    
+    loadCategoryNews(category);
+}
+
+// Cargar noticias de una categoría con búsqueda
+function loadCategoryNews(category, searchTerm = '') {
+    // Prevenir múltiples cargas simultáneas
+    if (isLoading) {
+        console.log('Ya se está cargando, ignorando llamada duplicada');
+        return;
+    }
+    
+    const loadId = ++currentLoadId;
+    console.log(`Iniciando carga categoría #${loadId} para: "${category}" con búsqueda: "${searchTerm}"`);
+    
+    isLoading = true;
+    categoryNewsContainer.innerHTML = '';
+    categoryNewsLoading.classList.remove('hidden');
+    
+    db.collection('news').get()
+        .then(querySnapshot => {
+            // Verificar si es la carga más reciente
+            if (loadId !== currentLoadId) {
+                console.log(`Carga categoría #${loadId} obsoleta, ignorando`);
+                isLoading = false;
+                return;
+            }
+            
+            categoryNewsLoading.classList.add('hidden');
+            
+            if (querySnapshot.empty) {
+                categoryNewsContainer.innerHTML = `
+                    <div class="category-no-results">
+                        <i class="fas fa-newspaper"></i>
+                        <h4>No hay noticias en esta categoría</h4>
+                        <p>No se encontraron noticias en la categoría "${category}"</p>
+                    </div>
+                `;
+                isLoading = false;
+                return;
+            }
+            
+            const newsList = [];
+            const searchLower = searchTerm ? searchTerm.toLowerCase() : '';
+            const seenIds = new Set(); // Para evitar duplicados
+            
+            querySnapshot.forEach(doc => {
+                const news = doc.data();
+                news.id = doc.id;
+                
+                // Evitar duplicados por ID
+                if (seenIds.has(news.id)) {
+                    console.warn('Noticia duplicada ignorada:', news.id);
+                    return;
+                }
+                seenIds.add(news.id);
+                
+                // Filtrar por categoría
+                if (!news.category || news.category.trim() !== category.trim()) {
+                    return;
+                }
+                
+                // Filtrar por búsqueda si existe
+                if (searchTerm && searchTerm !== '') {
+                    const titleMatch = news.title ? news.title.toLowerCase().includes(searchLower) : false;
+                    const summaryMatch = news.summary ? news.summary.toLowerCase().includes(searchLower) : false;
+                    const tagsMatch = news.tags ? news.tags.toLowerCase().includes(searchLower) : false;
+                    
+                    if (!titleMatch && !summaryMatch && !tagsMatch) {
+                        return;
+                    }
+                }
+                
+                newsList.push(news);
+            });
+            
+            // Ordenar por fecha (más reciente primero)
+            newsList.sort((a, b) => {
+                const dateA = a.timestamp ? (a.timestamp.toDate ? a.timestamp.toDate() : new Date(a.timestamp)) : new Date(0);
+                const dateB = b.timestamp ? (b.timestamp.toDate ? b.timestamp.toDate() : new Date(b.timestamp)) : new Date(0);
+                return dateB - dateA;
+            });
+            
+            // Mostrar noticias
+            if (newsList.length === 0) {
+                let message = `No hay noticias en la categoría "${category}"`;
+                if (searchTerm) {
+                    message += ` con el término "${searchTerm}"`;
+                }
+                
+                categoryNewsContainer.innerHTML = `
+                    <div class="category-no-results">
+                        <i class="fas fa-search"></i>
+                        <h4>${message}</h4>
+                        ${searchTerm ? 
+                            `<button id="clear-current-category-search-public" class="back-to-all-category">
+                                <i class="fas fa-times"></i> Mostrar todas las noticias de ${category}
+                            </button>` 
+                            : ''
+                        }
+                    </div>
+                `;
+                
+                // Agregar event listener al botón de limpiar búsqueda si existe
+                const clearBtn = document.getElementById('clear-current-category-search-public');
+                if (clearBtn && !clearBtn.dataset.listenerAdded) {
+                    clearBtn.dataset.listenerAdded = 'true';
+                    clearBtn.addEventListener('click', () => {
+                        categorySearchInput.value = '';
+                        currentCategorySearch = '';
+                        clearCategorySearchBtn.style.display = 'none';
+                        loadCategoryNews(category);
+                    });
+                }
+                isLoading = false;
+                return;
+            } else {
+                // Mostrar contador de resultados si hay búsqueda
+                if (searchTerm) {
+                    const resultsInfo = document.createElement('div');
+                    resultsInfo.className = 'category-search-results';
+                    resultsInfo.innerHTML = `
+                        <i class="fas fa-search"></i>
+                        <span>Mostrando <strong>${newsList.length}</strong> noticia${newsList.length !== 1 ? 's' : ''} 
+                        ${searchTerm ? `con el término "<strong>${searchTerm}</strong>"` : ''}</span>
+                    `;
+                    categoryNewsContainer.appendChild(resultsInfo);
+                }
+                
+                const seenCardIds = new Set(); // Para evitar tarjetas duplicadas
+                newsList.forEach(news => {
+                    if (!seenCardIds.has(news.id)) {
+                        seenCardIds.add(news.id);
+                        const newsCard = createNewsCardForCategory(news);
+                        categoryNewsContainer.appendChild(newsCard);
+                    }
+                });
+            }
+            
+            isLoading = false;
+            console.log(`Carga categoría #${loadId} completada: ${newsList.length} noticias`);
+        })
+        .catch(error => {
+            if (loadId === currentLoadId) {
+                categoryNewsLoading.classList.add('hidden');
+                console.error('Error al cargar noticias de categoría:', error);
+                categoryNewsContainer.innerHTML = `
                     <div style="grid-column:1/-1; text-align:center; padding:30px; color:#c0392b;">
                         <h3>Error al cargar las noticias</h3>
                         <p>${error.message}</p>
                     </div>
                 `;
             }
-        })
-        .finally(() => {
-            if (loadId === currentLoadId) {
-                isLoading = false;
-            }
+            isLoading = false;
         });
 }
 
-// Crear tarjeta de noticia
-function createNewsCard(news, search = '') {
+// Crear tarjeta de noticia para vista de categoría
+function createNewsCardForCategory(news) {
     if (!news || !news.id) {
         console.error('Datos de noticia inválidos:', news);
         return null;
@@ -271,53 +607,28 @@ function createNewsCard(news, search = '') {
     const card = document.createElement('div');
     card.className = 'news-card';
     card.dataset.id = news.id;
-    card.dataset.category = news.category || 'General';
     
     const formattedDate = formatShortDate(news.timestamp);
     const imageUrl = news.imageUrl || DEFAULT_IMAGE;
     
-    // Función para resaltar texto de búsqueda
-    const highlightText = (text) => {
-        if (!search || !text || search.trim() === '') return text;
-        
-        const searchLower = search.toLowerCase();
-        const textLower = text.toLowerCase();
-        const index = textLower.indexOf(searchLower);
-        
-        if (index === -1) return text;
-        
-        const before = text.substring(0, index);
-        const highlighted = text.substring(index, index + search.length);
-        const after = text.substring(index + search.length);
-        
-        return `${before}<span class="highlight">${highlighted}</span>${after}`;
-    };
-    
-    const highlightedTitle = highlightText(news.title);
-    const highlightedSummary = highlightText(news.summary);
-    
     card.innerHTML = `
-        <div class="news-image" style="background-image: url('${imageUrl}')">
-            <div class="news-card-category">${news.category || 'General'}</div>
-        </div>
+        <div class="news-image" style="background-image: url('${imageUrl}')"></div>
         <div class="news-content">
             <span class="news-category">${news.category || 'General'}</span>
-            <h3 class="news-title">${highlightedTitle}</h3>
+            <h3 class="news-title">${news.title}</h3>
             <div class="news-date">
                 <i class="far fa-calendar-alt"></i>
                 ${formattedDate}
             </div>
-            <p class="news-summary">${highlightedSummary}</p>
+            <p class="news-summary">${news.summary}</p>
             <div class="read-more">Leer más <i class="fas fa-arrow-right"></i></div>
         </div>
     `;
     
-    // Event listener con verificación de existencia
-    const existingListener = card.getAttribute('data-has-listener');
-    if (!existingListener) {
-        card.setAttribute('data-has-listener', 'true');
-        card.addEventListener('click', (e) => {
-            e.stopPropagation();
+    // Event listener con verificación de existencia (solo una vez)
+    if (!card.dataset.listenerAdded) {
+        card.dataset.listenerAdded = 'true';
+        card.addEventListener('click', () => {
             showNewsDetail(news.id);
         });
     }
@@ -325,77 +636,13 @@ function createNewsCard(news, search = '') {
     return card;
 }
 
-// Actualizar estadísticas del filtro
-function updateFilterStats(total, filtered, category, search) {
-    if (!filterStats) return;
-    
-    let statsHTML = '';
-    
-    if (search && search !== '') {
-        statsHTML = `
-            <span class="filter-info">
-                <i class="fas fa-search"></i> 
-                Búsqueda: <strong>"${search}"</strong> - 
-                Mostrando ${filtered} de ${total} noticias
-                ${category ? `en <strong>${category}</strong>` : ''}
-                <button id="clear-search-btn" class="clear-filter-btn">
-                    <i class="fas fa-times"></i> Limpiar búsqueda
-                </button>
-            </span>
-        `;
-    } else if (category && category !== '') {
-        statsHTML = `
-            <span class="filter-info">
-                <i class="fas fa-filter"></i> 
-                Mostrando ${filtered} de ${total} noticias en <strong>${category}</strong>
-                <button id="clear-filter-btn" class="clear-filter-btn">
-                    <i class="fas fa-times"></i> Limpiar filtro
-                </button>
-            </span>
-        `;
-    } else {
-        statsHTML = `
-            <span class="filter-info">
-                <i class="fas fa-newspaper"></i> 
-                Mostrando todas las noticias (${total})
-            </span>
-        `;
-    }
-    
-    filterStats.innerHTML = statsHTML;
-    
-    // Configurar botón para limpiar búsqueda
-    const clearSearchBtn = document.getElementById('clear-search-btn');
-    if (clearSearchBtn) {
-        clearSearchBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            searchInput.value = '';
-            currentSearch = '';
-            loadNews(currentCategory, '');
-            updateURL();
-        });
-    }
-    
-    // Configurar botón para limpiar filtro de categoría
-    const clearFilterBtn = document.getElementById('clear-filter-btn');
-    if (clearFilterBtn) {
-        clearFilterBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            categoryFilterSelect.value = '';
-            currentCategory = '';
-            loadNews('', currentSearch);
-            updateURL();
-        });
-    }
-}
-
 // Mostrar vista detallada de una noticia
 function showNewsDetail(newsId) {
     currentNewsId = newsId;
     
-    newsSection.classList.add('hidden');
+    categoriesSection.classList.add('hidden');
+    categoryDetailSection.classList.add('hidden');
     newsDetailSection.classList.remove('hidden');
-    backToList.classList.remove('hidden');
     
     newsDetailContainer.classList.add('hidden');
     newsDetailLoading.classList.remove('hidden');
@@ -410,13 +657,13 @@ function showNewsDetail(newsId) {
                 displayNewsDetail(news);
             } else {
                 showMessage('Noticia no encontrada', 'error');
-                setTimeout(() => showNewsList(), 2000);
+                setTimeout(() => showCategories(), 2000);
             }
         })
         .catch(error => {
             console.error('Error al cargar noticia:', error);
             showMessage('Error al cargar la noticia', 'error');
-            setTimeout(() => showNewsList(), 2000);
+            setTimeout(() => showCategories(), 2000);
         });
 }
 
@@ -516,18 +763,37 @@ function getVideoEmbedCode(videoUrl) {
     return `<p><a href="${videoUrl}" target="_blank">Ver video</a></p>`;
 }
 
-// Volver a la lista de noticias
-function showNewsList() {
-    newsSection.classList.remove('hidden');
-    newsDetailSection.classList.add('hidden');
-    backToList.classList.add('hidden');
+// Volver a las categorías
+function showCategories() {
+    currentCategory = '';
+    currentCategorySearch = '';
     
-    loadNews(currentCategory, currentSearch);
+    categoriesSection.classList.remove('hidden');
+    categoryDetailSection.classList.add('hidden');
+    newsDetailSection.classList.add('hidden');
+    
+    // Resetear búsqueda en categoría
+    if (categorySearchInput) {
+        categorySearchInput.value = '';
+    }
+    if (clearCategorySearchBtn) {
+        clearCategorySearchBtn.style.display = 'none';
+    }
+    
+    loadCategories(currentSearch);
     updateURL();
     
     document.title = 'Portal de Noticias' + 
-                    (currentCategory ? ` - ${currentCategory}` : '') +
                     (currentSearch ? ` - Búsqueda: ${currentSearch}` : '');
+}
+
+// Volver a la categoría actual
+function showCurrentCategory() {
+    if (currentCategory) {
+        showCategoryDetail(currentCategory);
+    } else {
+        showCategories();
+    }
 }
 
 // Compartir noticia
@@ -584,15 +850,9 @@ window.addEventListener('popstate', function(event) {
     
     if (newsParam) {
         showNewsDetail(newsParam);
+    } else if (categoryParam) {
+        showCategoryDetail(categoryParam);
     } else {
-        if (categoryParam !== null) {
-            currentCategory = categoryParam;
-            categoryFilterSelect.value = categoryParam;
-        } else {
-            currentCategory = '';
-            categoryFilterSelect.value = '';
-        }
-        
         if (searchParam !== null) {
             currentSearch = searchParam;
             searchInput.value = searchParam;
@@ -600,34 +860,33 @@ window.addEventListener('popstate', function(event) {
             currentSearch = '';
             searchInput.value = '';
         }
-        
-        loadNews(currentCategory, currentSearch);
-        showNewsList();
+        showCategories();
     }
 });
 
-// Event Listeners con prevención de múltiples listeners
-function setupEventListeners() {
+// Configurar event listeners
+document.addEventListener('DOMContentLoaded', function() {
+    // Botón para volver a categorías
+    if (backToCategoriesBtn && !backToCategoriesBtn.dataset.listenerAdded) {
+        backToCategoriesBtn.dataset.listenerAdded = 'true';
+        backToCategoriesBtn.addEventListener('click', showCategories);
+    }
+    
+    // Botón para volver atrás
     if (backButton && !backButton.dataset.listenerAdded) {
         backButton.dataset.listenerAdded = 'true';
-        backButton.addEventListener('click', showNewsList);
+        backButton.addEventListener('click', showCurrentCategory);
     }
     
-    if (backToList && !backToList.dataset.listenerAdded) {
-        backToList.dataset.listenerAdded = 'true';
-        backToList.addEventListener('click', showNewsList);
-    }
-    
+    // Logo para ir al inicio
     if (goHome && !goHome.dataset.listenerAdded) {
         goHome.dataset.listenerAdded = 'true';
-        goHome.addEventListener('click', showNewsList);
+        goHome.addEventListener('click', showCategories);
     }
     
+    // Botón para compartir
     if (shareNewsBtn && !shareNewsBtn.dataset.listenerAdded) {
         shareNewsBtn.dataset.listenerAdded = 'true';
         shareNewsBtn.addEventListener('click', shareNews);
     }
-}
-
-// Inicializar listeners
-setupEventListeners();
+});
