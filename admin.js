@@ -40,6 +40,14 @@ const viewListBtn = document.getElementById('view-list');
 const categorySearchInput = document.getElementById('category-search-input');
 const clearCategorySearchBtn = document.getElementById('clear-category-search');
 
+// NUEVAS REFERENCIAS para funcionalidad de imágenes
+const newsImageInput = document.getElementById('news-image');
+const testImageUrlBtn = document.getElementById('test-image-url');
+const imagePreviewContainer = document.getElementById('image-preview-container');
+const imagePreview = document.getElementById('image-preview');
+const removeImageBtn = document.getElementById('remove-image');
+const testImgBtns = document.querySelectorAll('.test-img-btn');
+
 // Variables globales
 let isAdmin = false;
 let ckeditor = null;
@@ -48,22 +56,23 @@ let isAdminLoading = false;
 let currentAdminLoadId = 0;
 let currentViewMode = 'categories';
 let currentAdminCategory = '';
-let currentCategorySearch = ''; // NUEVA VARIABLE para búsqueda en categoría
+let currentCategorySearch = '';
 
 // Colores para cada categoría
 const categoryColors = {
-    'Política': '#1e3c72',
-    'Tecnología': '#27ae60',
-    'Deportes': '#e74c3c',
-    'Cultura': '#9b59b6',
-    'Salud': '#3498db',
-    'Internacional': '#f39c12',
-    'Economía': '#16a085',
-    'Educación': '#8e44ad',
-    'Entretenimiento': '#e67e22',
-    'Ciencia': '#2c3e50',
-    'Ayudas': '#a04600',
-    'General': '#7f8c8d'
+    'Política': '#ff00a2',
+    'Tecnología': '#2400f2',
+    'Deportes': '#c42513',
+    'Cultura': '#8007af',
+    'Salud': '#6bc4ff',
+    'Internacional': '#ff9d00',
+    'Economía': '#01ffcc',
+    'Educación': '#27ae60',
+    'Entretenimiento': '#f6ff00',
+    'Ciencia': '#3c454e',
+    'Ayudas': '#692e00',
+    'Comunitaria': '#ff0000',
+    'General': '#d5cdcd'
 };
 
 // Iconos para cada categoría
@@ -79,8 +88,141 @@ const categoryIcons = {
     'Entretenimiento': 'fa-film',
     'Ciencia': 'fa-flask',
     'Ayudas': 'fa-hands-helping',
+    'Comunitaria': 'fa-home',
     'General': 'fa-newspaper'
 };
+
+// Imágenes de prueba por categoría
+const testImages = {
+    'noticias': [
+        'https://images.unsplash.com/photo-1588681664899-f142ff2dc9b1?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
+        'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
+        'https://images.unsplash.com/photo-1557426272-fc759fdf7a8d?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80'
+    ],
+    'tecnologia': [
+        'https://images.unsplash.com/photo-1518709268805-4e9042af2176?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
+        'https://images.unsplash.com/photo-1517077304055-6e89abbf09b0?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
+        'https://images.unsplash.com/photo-1498050108023-c5249f4df085?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80'
+    ],
+    'deportes': [
+        'https://images.unsplash.com/photo-1461896836934-ffe607ba8211?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
+        'https://images.unsplash.com/photo-1575361204480-aadea25e6e68?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
+        'https://images.unsplash.com/photo-1546519638-68e109498ffc?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80'
+    ],
+    'salud': [
+        'https://images.unsplash.com/photo-1579684385127-1ef15d508118?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
+        'https://images.unsplash.com/photo-1559757148-5c350d0d3c56?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
+        'https://images.unsplash.com/photo-1505751172876-fa1923c5c528?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80'
+    ],
+    'cultura': [
+        'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
+        'https://images.unsplash.com/photo-1540575467063-178a50c2df87?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
+        'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80'
+    ],
+    'general': [
+        'https://images.unsplash.com/photo-1588681664899-f142ff2dc9b1?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
+        'https://images.unsplash.com/photo-1504711434969-e33886168f5c?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
+        'https://images.unsplash.com/photo-1506126613408-eca07ce68773?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80'
+    ]
+};
+
+// ===== FUNCIONALIDAD PARA IMÁGENES =====
+
+// Probar URL de imagen
+function testImageUrl() {
+    const url = newsImageInput.value.trim();
+    
+    if (!url) {
+        showMessage('Por favor, ingresa una URL de imagen', 'warning');
+        return;
+    }
+    
+    // Validar que sea una URL válida
+    try {
+        new URL(url);
+    } catch (e) {
+        showMessage('URL inválida. Por favor, ingresa una URL completa (comenzando con http:// o https://)', 'error');
+        return;
+    }
+    
+    testImageUrlBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Probando...';
+    testImageUrlBtn.disabled = true;
+    
+    // Crear imagen para probar
+    const img = new Image();
+    
+    img.onload = function() {
+        // Mostrar vista previa
+        imagePreview.innerHTML = `
+            <div class="preview-success">
+                <i class="fas fa-check-circle"></i>
+                <p>¡URL válida! Imagen cargada correctamente.</p>
+                <div class="preview-img" style="background-image: url('${url}')"></div>
+                <div class="preview-info">
+                    <p><strong>Tamaño:</strong> ${img.naturalWidth} x ${img.naturalHeight} px</p>
+                    <p><strong>Formato:</strong> ${url.split('.').pop().toUpperCase()}</p>
+                </div>
+            </div>
+        `;
+        imagePreviewContainer.classList.remove('hidden');
+        
+        testImageUrlBtn.innerHTML = '<i class="fas fa-check"></i> Probar URL';
+        testImageUrlBtn.disabled = false;
+        
+        showMessage('¡URL de imagen válida! Vista previa cargada.', 'success');
+    };
+    
+    img.onerror = function() {
+        imagePreview.innerHTML = `
+            <div class="preview-error">
+                <i class="fas fa-exclamation-circle"></i>
+                <p>No se pudo cargar la imagen. Verifica que la URL sea correcta y la imagen sea accesible.</p>
+                <p class="error-tip">Consejo: Asegúrate de usar una URL directa a la imagen (que termine en .jpg, .png, etc.)</p>
+            </div>
+        `;
+        imagePreviewContainer.classList.remove('hidden');
+        
+        testImageUrlBtn.innerHTML = '<i class="fas fa-check"></i> Probar URL';
+        testImageUrlBtn.disabled = false;
+        
+        showMessage('Error al cargar la imagen. Verifica la URL.', 'error');
+    };
+    
+    // Establecer timeout
+    setTimeout(() => {
+        if (!img.complete) {
+            img.src = ''; // Cancelar carga
+            testImageUrlBtn.innerHTML = '<i class="fas fa-check"></i> Probar URL';
+            testImageUrlBtn.disabled = false;
+            showMessage('Tiempo de espera agotado. La imagen tardó demasiado en cargar.', 'error');
+        }
+    }, 10000);
+    
+    img.src = url;
+}
+
+// Cargar imagen de prueba
+function loadTestImage(category) {
+    if (!testImages[category]) {
+        showMessage('Categoría no encontrada', 'error');
+        return;
+    }
+    
+    const images = testImages[category];
+    const randomImage = images[Math.floor(Math.random() * images.length)];
+    
+    newsImageInput.value = randomImage;
+    testImageUrl(); // Probar automáticamente
+    
+    showMessage(`Imagen de prueba (${category}) cargada`, 'success');
+}
+
+// Remover imagen
+function removeImage() {
+    newsImageInput.value = '';
+    imagePreviewContainer.classList.add('hidden');
+    showMessage('Imagen removida', 'success');
+}
 
 // Inicializar CKEditor 5
 function initCKEditor() {
@@ -137,27 +279,49 @@ function initSummaryCounter() {
     }
 }
 
-// Estado de la aplicación
-document.addEventListener('DOMContentLoaded', function() {
-    auth.onAuthStateChanged(user => {
-        if (user) {
-            showAdminUI(user);
-            loadAdminNews();
-            initCKEditor();
-            initSummaryCounter();
-        } else {
-            showLoginUI();
-        }
-    });
-
-    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-        loginEmailInput.value = 'admin@ejemplo.com';
-        loginPasswordInput.value = 'admin123';
+// Inicializar funcionalidad de imágenes
+function initImageFunctionality() {
+    // Event listener para probar URL
+    if (testImageUrlBtn) {
+        testImageUrlBtn.addEventListener('click', testImageUrl);
     }
     
-    loadDraft();
+    // Event listener para remover imagen
+    if (removeImageBtn) {
+        removeImageBtn.addEventListener('click', removeImage);
+    }
     
-    setupEventListeners();
+    // Event listeners para botones de imágenes de prueba
+    testImgBtns.forEach(btn => {
+        btn.addEventListener('click', function() {
+            const category = this.getAttribute('data-category');
+            loadTestImage(category);
+        });
+    });
+    
+    // Probar automáticamente cuando se pegue una URL
+    newsImageInput.addEventListener('paste', function(e) {
+        setTimeout(() => {
+            if (this.value.trim() && this.value.trim().startsWith('http')) {
+                testImageUrl();
+            }
+        }, 100);
+    });
+}
+
+// CON ESTE BLOQUE CORREGIDO (sin verificación redundante de UID):
+auth.onAuthStateChanged(user => {
+    if (user) {
+        // MOSTRAR UI DE ADMINISTRADOR - SIN VERIFICACIÓN EXTRA
+        // Las reglas de Firestore ya manejan la seguridad
+        showAdminUI(user);
+        loadAdminNews();
+        initCKEditor();
+        initSummaryCounter();
+        initImageFunctionality();
+    } else {
+        showLoginUI();
+    }
 });
 
 // Función para configurar event listeners
@@ -206,6 +370,8 @@ function setupEventListeners() {
                 if (summaryChars) {
                     summaryChars.textContent = '0';
                 }
+                // Limpiar también la vista previa de imagen
+                imagePreviewContainer.classList.add('hidden');
                 showMessage('Formulario limpiado', 'success');
             }
         });
@@ -1001,6 +1167,14 @@ function editNews(newsId) {
                     summaryChars.textContent = news.summary ? news.summary.length : 0;
                 }
                 
+                // Mostrar vista previa si hay imagen
+                if (news.imageUrl) {
+                    newsImageInput.value = news.imageUrl;
+                    testImageUrl(); // Probar automáticamente
+                } else {
+                    imagePreviewContainer.classList.add('hidden');
+                }
+                
                 newsForm.dataset.editingId = newsId;
                 publishNewsBtn.innerHTML = '<i class="fas fa-sync-alt"></i> Actualizar Noticia';
                 
@@ -1079,6 +1253,12 @@ function restoreDraft() {
         summaryChars.textContent = currentDraft.summary ? currentDraft.summary.length : 0;
     }
     
+    // Mostrar vista previa si hay imagen
+    if (currentDraft.imageUrl) {
+        newsImageInput.value = currentDraft.imageUrl;
+        testImageUrl();
+    }
+    
     showMessage('Borrador restaurado', 'success');
 }
 
@@ -1136,6 +1316,9 @@ function publishNews(event) {
             
             delete newsForm.dataset.editingId;
             publishNewsBtn.innerHTML = '<i class="fas fa-paper-plane"></i> Publicar Noticia';
+            
+            // Limpiar vista previa de imagen
+            imagePreviewContainer.classList.add('hidden');
             
             localStorage.removeItem('newsDraft');
             currentDraft = null;
@@ -1366,3 +1549,18 @@ function forceReloadNews() {
     loadAdminNews(searchNewsInput.value, adminCategoryFilter ? adminCategoryFilter.value : '');
     showMessage('Recarga forzada completada', 'success');
 }
+
+// Inicializar cuando el DOM esté cargado
+document.addEventListener('DOMContentLoaded', function() {
+    // Cargar event listeners
+    setupEventListeners();
+    
+    // Cargar borrador si existe
+    loadDraft();
+    
+    // Configurar año actual en el footer
+    const yearElement = document.getElementById('current-year');
+    if (yearElement) {
+        yearElement.textContent = new Date().getFullYear();
+    }
+});

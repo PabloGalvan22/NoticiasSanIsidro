@@ -1,4 +1,4 @@
-// Configuración de Firebase - REEMPLAZA CON TUS PROPIOS DATOS
+// CONFIGURACIÓN DE FIREBASE - REEMPLAZA CON TUS DATOS DEL PASO 5
 const firebaseConfig = {
   apiKey: "AIzaSyBFXItxbyVAcHhF0x1l9ejg1b-O_F_raEg",
   authDomain: "noticias-seguridad.firebaseapp.com",
@@ -8,9 +8,10 @@ const firebaseConfig = {
   appId: "1:719000010767:web:2e54e84e94ddb3400da37a"
 };
 
-// Inicializar Firebase solo una vez
+// Inicializar Firebase
 try {
     firebase.initializeApp(firebaseConfig);
+    console.log('Firebase inicializado correctamente');
 } catch (error) {
     console.error('Error al inicializar Firebase:', error);
 }
@@ -18,20 +19,9 @@ try {
 // Exportar servicios de Firebase
 const auth = firebase.auth();
 const db = firebase.firestore();
+const storage = firebase.storage(); // Para posibles futuras mejoras
 
-// Función para manejar errores de consulta
-function handleQueryError(error, fallbackFunction) {
-    if (error.code === 'failed-precondition' && error.message.includes('index')) {
-        console.warn('Índice requerido no encontrado, usando método alternativo...');
-        // Aquí podrías implementar un fallback
-        return null;
-    } else {
-        console.error('Error de Firebase:', error);
-        throw error;
-    }
-}
-
-// Función para formatear fechas
+// Funciones para formatear fechas
 function formatDate(date) {
     if (!date) return 'Fecha no disponible';
     
@@ -45,7 +35,6 @@ function formatDate(date) {
     });
 }
 
-// Función para obtener fecha corta
 function formatShortDate(date) {
     if (!date) return '';
     
@@ -57,7 +46,7 @@ function formatShortDate(date) {
     });
 }
 
-// URL de imagen por defecto
+// URL de imagen por defecto (Se usará si no hay URL de imagen)
 const DEFAULT_IMAGE = 'https://images.unsplash.com/photo-1588681664899-f142ff2dc9b1?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80';
 
 // Configurar año actual

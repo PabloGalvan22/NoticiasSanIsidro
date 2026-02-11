@@ -72,14 +72,109 @@
                             <option value="Entretenimiento">Entretenimiento</option>
                             <option value="Ciencia">Ciencia</option>
                             <option value="Ayudas">Ayudas Sociales</option>
+                            <option value="Comunitaria">Comunidad</option>
                         </select>
                     </div>
                 </div>
                 
+                <!-- SECCIÓN MEJORADA DE IMÁGENES -->
                 <div class="form-group">
-                    <label for="news-image">URL de la imagen principal</label>
-                    <input type="url" id="news-image" placeholder="https://ejemplo.com/imagen.jpg">
-                    <small class="help-text">Imagen principal que aparecerá en la vista previa. Puedes usar imágenes de <a href="https://unsplash.com" target="_blank">Unsplash</a>, <a href="https://picsum.photos" target="_blank">Lorem Picsum</a> o subirla a un servicio como <a href="https://imgbb.com" target="_blank">ImgBB</a>.</small>
+                    <label for="news-image">Imagen principal de la noticia</label>
+                    
+                    <!-- Campo para URL con botón de prueba -->
+                    <div class="image-input-container">
+                        <input type="url" id="news-image" placeholder="https://ejemplo.com/imagen.jpg">
+                        <button type="button" id="test-image-url" class="test-url-btn">
+                            <i class="fas fa-check"></i> Probar URL
+                        </button>
+                    </div>
+                    
+                    <!-- Vista previa en tiempo real -->
+                    <div id="image-preview-container" class="image-preview-container hidden">
+                        <div class="image-preview-header">
+                            <span>Vista previa:</span>
+                            <button type="button" id="remove-image" class="remove-btn">
+                                <i class="fas fa-times"></i> Quitar
+                            </button>
+                        </div>
+                        <div id="image-preview" class="image-preview"></div>
+                    </div>
+                    
+                    <!-- Servicios recomendados -->
+                    <div class="image-services-section">
+                        <h4><i class="fas fa-lightbulb"></i> Servicios recomendados:</h4>
+                        <div class="services-grid">
+                            <a href="https://imgbb.com/" target="_blank" class="service-card">
+                                <div class="service-icon">
+                                    <i class="fas fa-cloud-upload-alt"></i>
+                                </div>
+                                <div class="service-info">
+                                    <h5>ImgBB</h5>
+                                    <p>Sube imágenes gratis. Sin registro necesario.</p>
+                                </div>
+                            </a>
+                            
+                            <a href="https://unsplash.com/" target="_blank" class="service-card">
+                                <div class="service-icon">
+                                    <i class="fas fa-camera"></i>
+                                </div>
+                                <div class="service-info">
+                                    <h5>Unsplash</h5>
+                                    <p>Fotos profesionales gratuitas.</p>
+                                </div>
+                            </a>
+                            
+                            <a href="https://picsum.photos/" target="_blank" class="service-card">
+                                <div class="service-icon">
+                                    <i class="fas fa-random"></i>
+                                </div>
+                                <div class="service-info">
+                                    <h5>Lorem Picsum</h5>
+                                    <p>Imágenes aleatorias para pruebas.</p>
+                                </div>
+                            </a>
+                            
+                            <a href="https://postimages.org/" target="_blank" class="service-card">
+                                <div class="service-icon">
+                                    <i class="fas fa-image"></i>
+                                </div>
+                                <div class="service-info">
+                                    <h5>Postimages</h5>
+                                    <p>Alojamiento simple y rápido.</p>
+                                </div>
+                            </a>
+                        </div>
+                    </div>
+                    
+                    <!-- Generador de imágenes de prueba -->
+                    <div class="test-images-section">
+                        <h4><i class="fas fa-vial"></i> Imágenes de prueba por categoría:</h4>
+                        <div class="test-images-buttons">
+                            <button type="button" class="test-img-btn" data-category="noticias">
+                                <i class="fas fa-newspaper"></i> Noticias
+                            </button>
+                            <button type="button" class="test-img-btn" data-category="tecnologia">
+                                <i class="fas fa-laptop"></i> Tecnología
+                            </button>
+                            <button type="button" class="test-img-btn" data-category="deportes">
+                                <i class="fas fa-futbol"></i> Deportes
+                            </button>
+                            <button type="button" class="test-img-btn" data-category="salud">
+                                <i class="fas fa-heartbeat"></i> Salud
+                            </button>
+                            <button type="button" class="test-img-btn" data-category="cultura">
+                                <i class="fas fa-theater-masks"></i> Cultura
+                            </button>
+                            <button type="button" class="test-img-btn" data-category="general">
+                                <i class="fas fa-image"></i> General
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <small class="help-text">
+                        <strong>Instrucciones:</strong> 1) Usa un servicio recomendado para subir tu imagen 
+                        2) Copia la URL generada 3) Pégala en el campo superior 4) Verifica la vista previa
+                    </small>
                 </div>
                 
                 <div class="form-group">
@@ -153,6 +248,7 @@
                             <option value="Educación">Educación</option>
                             <option value="Entretenimiento">Entretenimiento</option>
                             <option value="Ciencia">Ciencia</option>
+                            <option value="Comunitaria">Comunidad</option>
                             <option value="Ayudas">Ayudas Sociales</option>
                         </select>
                         <div class="search-box">
@@ -182,8 +278,7 @@
                 
                 <!-- Contenedor para vista de lista (oculto por defecto) -->
                 <div id="admin-news-container" class="news-grid hidden"></div>
-                <!-- En admin.html, dentro de #admin-category-detail y #admin-news-container -->
-
+                
                 <!-- Contenedor para vista de categoría específica (oculto por defecto) -->
                 <div id="admin-category-detail" class="hidden">
                     <div class="category-detail-header">

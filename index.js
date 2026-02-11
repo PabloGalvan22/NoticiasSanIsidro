@@ -37,18 +37,19 @@ let currentLoadId = 0;
 
 // Colores para cada categoría
 const categoryColors = {
-    'Política': '#1e3c72',
-    'Tecnología': '#27ae60',
-    'Deportes': '#e74c3c',
-    'Cultura': '#9b59b6',
-    'Salud': '#3498db',
-    'Internacional': '#f39c12',
-    'Economía': '#16a085',
-    'Educación': '#2c989c',
-    'Entretenimiento': '#e67e22',
-    'Ciencia': '#2c3e50',
-    'Ayudas': '#a04600',
-    'General': '#7f8c8d'
+    'Política': '#ff00a2',
+    'Tecnología': '#2400f2',
+    'Deportes': '#c42513',
+    'Cultura': '#8007af',
+    'Salud': '#6bc4ff',
+    'Internacional': '#ff9d00',
+    'Economía': '#01ffcc',
+    'Educación': '#27ae60',
+    'Entretenimiento': '#f6ff00',
+    'Ciencia': '#3c454e',
+    'Ayudas': '#692e00',
+    'Comunitaria': '#ff0000',
+    'General': '#d5cdcd'
 };
 
 // Iconos para cada categoría
@@ -64,6 +65,7 @@ const categoryIcons = {
     'Entretenimiento': 'fa-film',
     'Ciencia': 'fa-flask',
     'Ayudas': 'fa-hands-helping',
+    'Comunitaria': 'fa-home',
     'General': 'fa-newspaper'
 };
 
