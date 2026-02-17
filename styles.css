@@ -609,7 +609,7 @@ textarea {
 /* Videos responsivos */
 .news-detail-content .video-container {
     position: relative;
-    padding-bottom: 56.25%; /* 16:9 */
+    padding-bottom: 56.25%;
     height: 0;
     overflow: hidden;
     margin: 1.5em 0;
@@ -955,7 +955,7 @@ footer {
     position: relative;
     width: 100%;
     height: 0;
-    padding-bottom: 56.25%; /* Relación 16:9 */
+    padding-bottom: 56.25%;
     margin: 20px 0;
     overflow: hidden;
     border-radius: 10px;
@@ -1877,6 +1877,210 @@ footer {
     background-color: rgba(231, 76, 60, 0.1);
 }
 
+/* ===== ESTILOS MEJORADOS PARA SUBCATEGORÍAS (MÁS ESTÉTICOS) ===== */
+
+/* Badge de subcategoría en tarjetas - VERSIÓN MEJORADA */
+.news-subcategory-badge {
+    display: inline-block;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    font-size: 0.7rem;
+    padding: 4px 10px;
+    border-radius: 20px;
+    margin: 5px 0 8px 0;
+    font-weight: 500;
+    letter-spacing: 0.3px;
+    box-shadow: 0 2px 5px rgba(102, 126, 234, 0.3);
+    border: none;
+    text-transform: uppercase;
+}
+
+/* Lista mini de subcategorías en tarjetas de categoría - VERSIÓN MEJORADA */
+.subcategories-mini-list {
+    margin-top: 20px;
+    padding-top: 15px;
+    border-top: 2px dashed #e0e7ff;
+    background: linear-gradient(to bottom, transparent, #fafbff);
+    border-radius: 0 0 8px 8px;
+}
+
+.subcategories-label {
+    font-size: 0.8rem;
+    color: #4a5568;
+    margin-right: 10px;
+    display: inline-block;
+    margin-bottom: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.subcategory-mini-btn {
+    background: white;
+    color: #4a5568;
+    border: 1px solid #e2e8f0;
+    padding: 6px 14px;
+    border-radius: 25px;
+    font-size: 0.75rem;
+    margin: 0 6px 8px 0;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    display: inline-block;
+    font-weight: 500;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.subcategory-mini-btn:hover {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    transform: translateY(-2px) scale(1.05);
+    border-color: transparent;
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+.more-subcats {
+    font-size: 0.75rem;
+    color: #718096;
+    margin-left: 8px;
+    font-weight: 500;
+    background: #edf2f7;
+    padding: 4px 10px;
+    border-radius: 20px;
+    display: inline-block;
+}
+
+/* Filtro de subcategorías en vista detalle - VERSIÓN MEJORADA */
+.subcategory-filter-container {
+    margin: 25px 0;
+    padding: 20px;
+    background: linear-gradient(135deg, #f5f7ff 0%, #ffffff 100%);
+    border-radius: 16px;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.02);
+    border: 1px solid rgba(102, 126, 234, 0.2);
+}
+
+.subcategory-filter {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    flex-wrap: wrap;
+}
+
+.subcategory-filter .filter-label {
+    font-weight: 700;
+    color: #2d3748;
+    font-size: 0.95rem;
+    background: white;
+    padding: 8px 16px;
+    border-radius: 30px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    border: 1px solid #e2e8f0;
+}
+
+.subcategory-filter .filter-label i {
+    color: #667eea;
+    margin-right: 8px;
+}
+
+.subcategory-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.subcat-filter-btn {
+    background: white;
+    color: #4a5568;
+    border: 1px solid #e2e8f0;
+    padding: 10px 20px;
+    border-radius: 30px;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-weight: 500;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.subcat-filter-btn:hover {
+    background: #f7fafc;
+    border-color: #cbd5e0;
+    transform: translateY(-1px);
+}
+
+.subcat-filter-btn.active {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-color: transparent;
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+/* Resultados con filtros activos - VERSIÓN MEJORADA */
+.category-search-results.active-filters {
+    background: linear-gradient(135deg, #ebf4ff 0%, #ffffff 100%);
+    border-left: 4px solid #667eea;
+    border-radius: 12px;
+    padding: 15px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 15px;
+    margin: 20px 0;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.category-search-results.active-filters i {
+    color: #667eea;
+}
+
+/* Subcategoría en vista detalle - VERSIÓN MEJORADA */
+.news-detail-subcategory {
+    background: linear-gradient(135deg, #667eea20 0%, #764ba220 100%);
+    color: #4a5568;
+    font-size: 0.95rem;
+    font-weight: 500;
+    margin-left: 10px;
+    padding: 4px 12px;
+    border-radius: 30px;
+    display: inline-block;
+    border: 1px solid #667eea40;
+}
+
+.news-detail-subcategory::before {
+    content: '›';
+    margin-right: 8px;
+    color: #667eea;
+    font-weight: bold;
+}
+
+/* Estilos para news-card-header en admin */
+.news-card-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 10px;
+}
+
+.news-card-actions {
+    display: flex;
+    gap: 5px;
+    margin-left: auto;
+}
+
+.news-card-actions button {
+    padding: 5px 10px;
+    font-size: 0.8rem;
+}
+
+.edit-news {
+    background-color: #3498db;
+}
+
+.delete-news {
+    background-color: #e74c3c;
+}
+
 /* Ajustes responsive */
 @media (max-width: 768px) {
     .admin-filters {
@@ -1907,5 +2111,19 @@ footer {
     
     .category-search-section .search-box {
         min-width: 100%;
+    }
+    
+    .subcategory-filter {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .subcategory-buttons {
+        width: 100%;
+    }
+    
+    .subcat-filter-btn {
+        flex: 1;
+        text-align: center;
     }
 }

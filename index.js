@@ -23,13 +23,14 @@ const newsDetailContent = document.getElementById('news-detail-content');
 const shareNewsBtn = document.getElementById('share-news');
 const filterStats = document.getElementById('filter-stats');
 
-// NUEVAS REFERENCIAS para búsqueda en categoría
+// Referencias para búsqueda en categoría
 const categorySearchInput = document.getElementById('category-search-input');
 const clearCategorySearchBtn = document.getElementById('clear-category-search-public');
 
 let currentCategory = '';
+let currentSubcategory = '';
 let currentSearch = '';
-let currentCategorySearch = ''; // NUEVA VARIABLE para búsqueda en categoría
+let currentCategorySearch = '';
 let currentNewsId = null;
 let debounceTimer;
 let isLoading = false;
@@ -37,35 +38,27 @@ let currentLoadId = 0;
 
 // Colores para cada categoría
 const categoryColors = {
-    'Política': '#ff00a2',
     'Tecnología': '#2400f2',
-    'Deportes': '#c42513',
-    'Cultura': '#8007af',
     'Salud': '#6bc4ff',
     'Internacional': '#ff9d00',
-    'Economía': '#0ed9b1',
     'Educación': '#27ae60',
-    'Entretenimiento': '#e3ea00',
-    'Ciencia': '#3c454e',
-    'Ayudas': '#692e00',
-    'Comunitaria': '#ff0000',
+    'Ciencia': '#ff00d4',
+    'Ayudas': '#ff0000',
+    'Comunitaria': '#e3ea00',
+    'Seguridad Publica': '#d400ff',
     'General': '#d5cdcd'
 };
 
 // Iconos para cada categoría
 const categoryIcons = {
-    'Política': 'fa-landmark',
     'Tecnología': 'fa-microchip',
-    'Deportes': 'fa-futbol',
-    'Cultura': 'fa-theater-masks',
     'Salud': 'fa-heartbeat',
     'Internacional': 'fa-globe-americas',
-    'Economía': 'fa-chart-line',
     'Educación': 'fa-graduation-cap',
-    'Entretenimiento': 'fa-film',
     'Ciencia': 'fa-flask',
     'Ayudas': 'fa-hands-helping',
     'Comunitaria': 'fa-home',
+    'Seguridad Publica': 'fa-lock',
     'General': 'fa-newspaper'
 };
 
@@ -75,12 +68,13 @@ document.addEventListener('DOMContentLoaded', function() {
     const urlParams = new URLSearchParams(window.location.search);
     const newsParam = urlParams.get('news');
     const categoryParam = urlParams.get('category');
+    const subcategoryParam = urlParams.get('subcategory');
     const searchParam = urlParams.get('search');
     
     if (newsParam) {
         showNewsDetail(newsParam);
     } else if (categoryParam) {
-        showCategoryDetail(categoryParam);
+        showCategoryDetail(categoryParam, subcategoryParam || '');
     } else {
         if (searchParam) {
             searchInput.value = searchParam;
@@ -132,7 +126,7 @@ function setupCategorySearch() {
             }
             
             categorySearchDebounceTimer = setTimeout(() => {
-                loadCategoryNews(currentCategory, searchTerm);
+                loadCategoryNews(currentCategory, currentSubcategory, searchTerm);
             }, 500);
         });
         
@@ -142,7 +136,7 @@ function setupCategorySearch() {
                 clearTimeout(categorySearchDebounceTimer);
                 const searchTerm = this.value.trim();
                 currentCategorySearch = searchTerm;
-                loadCategoryNews(currentCategory, searchTerm);
+                loadCategoryNews(currentCategory, currentSubcategory, searchTerm);
             }
         });
     }
@@ -154,7 +148,7 @@ function setupCategorySearch() {
             categorySearchInput.value = '';
             currentCategorySearch = '';
             clearCategorySearchBtn.style.display = 'none';
-            loadCategoryNews(currentCategory);
+            loadCategoryNews(currentCategory, currentSubcategory);
         });
     }
 }
@@ -167,6 +161,10 @@ function updateURL() {
         urlParams.set('category', currentCategory);
     }
     
+    if (currentSubcategory) {
+        urlParams.set('subcategory', currentSubcategory);
+    }
+    
     if (currentSearch) {
         urlParams.set('search', currentSearch);
     }
@@ -176,14 +174,14 @@ function updateURL() {
     
     if (newUrl !== window.location.search) {
         window.history.pushState(
-            { category: currentCategory, search: currentSearch }, 
+            { category: currentCategory, subcategory: currentSubcategory, search: currentSearch }, 
             '', 
             newUrl
         );
     }
 }
 
-// Cargar categorías con noticias - VERSIÓN SIN DUPLICADOS
+// Cargar categorías con noticias
 function loadCategories(search = '') {
     // Prevenir múltiples cargas simultáneas
     if (isLoading) {
@@ -365,6 +363,35 @@ function createCategoryCard(categoryName, newsList) {
     const categoryColor = categoryColors[categoryName] || '#4a6fc1';
     const categoryIcon = categoryIcons[categoryName] || 'fa-folder';
     
+    // Agrupar por subcategoría para mostrar variedad
+    const subcategoriesMap = {};
+    newsList.forEach(news => {
+        const sub = news.subcategory || 'General';
+        if (!subcategoriesMap[sub]) {
+            subcategoriesMap[sub] = [];
+        }
+        subcategoriesMap[sub].push(news);
+    });
+    
+    // Obtener lista de noticias para mostrar (priorizando diferentes subcategorías)
+    const displayNews = [];
+    const subcategories = Object.keys(subcategoriesMap);
+    
+    // Mostrar hasta 3 noticias de diferentes subcategorías si es posible
+    if (subcategories.length >= 3) {
+        for (let i = 0; i < 3; i++) {
+            if (subcategoriesMap[subcategories[i]] && subcategoriesMap[subcategories[i]].length > 0) {
+                displayNews.push(subcategoriesMap[subcategories[i]][0]);
+            }
+        }
+    } else {
+        newsList.slice(0, 3).forEach(news => {
+            if (!displayNews.some(n => n.id === news.id)) {
+                displayNews.push(news);
+            }
+        });
+    }
+    
     card.innerHTML = `
         <div class="category-card-header" style="background-color: ${categoryColor}">
             <div class="category-icon">
@@ -375,19 +402,33 @@ function createCategoryCard(categoryName, newsList) {
         </div>
         <div class="category-card-body">
             <div class="category-news-list">
-                ${newsList.map(news => `
+                ${displayNews.map(news => {
+                    const subcatDisplay = news.subcategory ? `<span class="news-subcategory-badge">${news.subcategory}</span>` : '';
+                    return `
                     <div class="category-news-item" data-id="${news.id}">
                         <div class="category-news-image" style="background-image: url('${news.imageUrl || DEFAULT_IMAGE}')"></div>
                         <div class="category-news-content">
                             <h4 class="category-news-title">${news.title}</h4>
+                            ${subcatDisplay}
                             <div class="category-news-date">
                                 <i class="far fa-calendar-alt"></i>
                                 ${formatShortDate(news.timestamp)}
                             </div>
                         </div>
                     </div>
-                `).join('')}
+                `}).join('')}
             </div>
+            
+            <!-- Mostrar subcategorías disponibles -->
+            ${Object.keys(subcategoriesMap).length > 1 ? `
+                <div class="subcategories-mini-list">
+                    <span class="subcategories-label">Subcategorías:</span>
+                    ${Object.keys(subcategoriesMap).slice(0, 5).map(sub => 
+                        `<button class="subcategory-mini-btn" data-category="${categoryName}" data-subcategory="${sub}">${sub}</button>`
+                    ).join('')}
+                    ${Object.keys(subcategoriesMap).length > 5 ? '<span class="more-subcats">+ más</span>' : ''}
+                </div>
+            ` : ''}
         </div>
         <div class="category-card-footer">
             <button class="view-category-btn" data-category="${categoryName}">
@@ -397,7 +438,7 @@ function createCategoryCard(categoryName, newsList) {
         </div>
     `;
     
-    // Agregar event listeners (solo una vez)
+    // Agregar event listeners para ver categoría
     const viewBtn = card.querySelector('.view-category-btn');
     if (viewBtn && !viewBtn.dataset.listenerAdded) {
         viewBtn.dataset.listenerAdded = 'true';
@@ -408,7 +449,21 @@ function createCategoryCard(categoryName, newsList) {
         });
     }
     
-    // Agregar listeners a cada noticia individual (solo una vez)
+    // Agregar listeners para subcategorías
+    const subcatBtns = card.querySelectorAll('.subcategory-mini-btn');
+    subcatBtns.forEach(btn => {
+        if (!btn.dataset.listenerAdded) {
+            btn.dataset.listenerAdded = 'true';
+            btn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                const category = this.getAttribute('data-category');
+                const subcategory = this.getAttribute('data-subcategory');
+                showCategoryDetail(category, subcategory);
+            });
+        }
+    });
+    
+    // Agregar listeners a cada noticia individual
     const newsItems = card.querySelectorAll('.category-news-item');
     newsItems.forEach(item => {
         if (!item.dataset.listenerAdded) {
@@ -423,14 +478,21 @@ function createCategoryCard(categoryName, newsList) {
     return card;
 }
 
-// Mostrar detalles de una categoría - VERSIÓN CON BÚSQUEDA
-function showCategoryDetail(category) {
+// Mostrar detalles de una categoría
+function showCategoryDetail(category, subcategory = '') {
     currentCategory = category;
+    currentSubcategory = subcategory;
     currentCategorySearch = '';
     
     categoriesSection.classList.add('hidden');
     categoryDetailSection.classList.remove('hidden');
-    categoryTitle.textContent = category;
+    
+    // Actualizar título con subcategoría si aplica
+    if (subcategory) {
+        categoryTitle.textContent = `${category} › ${subcategory}`;
+    } else {
+        categoryTitle.textContent = category;
+    }
     
     // Resetear búsqueda en categoría
     if (categorySearchInput) {
@@ -440,22 +502,86 @@ function showCategoryDetail(category) {
         clearCategorySearchBtn.style.display = 'none';
     }
     
-    const newUrl = window.location.origin + window.location.pathname + '?category=' + encodeURIComponent(category);
-    window.history.pushState({ category, search: currentSearch }, '', newUrl);
+    // Añadir selector de subcategorías en la vista detalle
+    addSubcategoryFilterToDetail(category, subcategory);
     
-    loadCategoryNews(category);
+    updateURL();
+    
+    loadCategoryNews(category, subcategory);
 }
 
-// Cargar noticias de una categoría con búsqueda
-function loadCategoryNews(category, searchTerm = '') {
-    // Prevenir múltiples cargas simultáneas
+// Añadir filtro de subcategorías en vista detalle
+function addSubcategoryFilterToDetail(category, selectedSubcategory = '') {
+    // Verificar si ya existe el contenedor
+    let filterContainer = document.getElementById('subcategory-filter-container');
+    
+    if (!filterContainer) {
+        filterContainer = document.createElement('div');
+        filterContainer.id = 'subcategory-filter-container';
+        filterContainer.className = 'subcategory-filter-container';
+        
+        // Insertar después del título de categoría
+        const actionsBar = document.querySelector('#category-detail-section .actions-bar');
+        if (actionsBar) {
+            actionsBar.after(filterContainer);
+        }
+    }
+    
+    // Cargar subcategorías disponibles para esta categoría
+    db.collection('news').get()
+        .then(snapshot => {
+            const subcategories = new Set();
+            snapshot.forEach(doc => {
+                const news = doc.data();
+                if (news.category === category && news.subcategory) {
+                    subcategories.add(news.subcategory);
+                }
+            });
+            
+            const subcatList = Array.from(subcategories).sort();
+            
+            if (subcatList.length === 0) {
+                filterContainer.innerHTML = '';
+                return;
+            }
+            
+            filterContainer.innerHTML = `
+                <div class="subcategory-filter">
+                    <span class="filter-label"><i class="fas fa-filter"></i> Filtrar por subcategoría:</span>
+                    <div class="subcategory-buttons">
+                        <button class="subcat-filter-btn ${!selectedSubcategory ? 'active' : ''}" 
+                                data-subcategory="">Todas</button>
+                        ${subcatList.map(sub => `
+                            <button class="subcat-filter-btn ${selectedSubcategory === sub ? 'active' : ''}" 
+                                    data-subcategory="${sub}">${sub}</button>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+            
+            // Agregar event listeners a los botones
+            const buttons = filterContainer.querySelectorAll('.subcat-filter-btn');
+            buttons.forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const subcat = this.getAttribute('data-subcategory');
+                    showCategoryDetail(category, subcat);
+                });
+            });
+        })
+        .catch(error => {
+            console.error('Error al cargar subcategorías:', error);
+        });
+}
+
+// Cargar noticias de una categoría con búsqueda y subcategoría
+function loadCategoryNews(category, subcategory = '', searchTerm = '') {
     if (isLoading) {
         console.log('Ya se está cargando, ignorando llamada duplicada');
         return;
     }
     
     const loadId = ++currentLoadId;
-    console.log(`Iniciando carga categoría #${loadId} para: "${category}" con búsqueda: "${searchTerm}"`);
+    console.log(`Iniciando carga categoría #${loadId} para: "${category}" subcat: "${subcategory}" búsqueda: "${searchTerm}"`);
     
     isLoading = true;
     categoryNewsContainer.innerHTML = '';
@@ -463,7 +589,6 @@ function loadCategoryNews(category, searchTerm = '') {
     
     db.collection('news').get()
         .then(querySnapshot => {
-            // Verificar si es la carga más reciente
             if (loadId !== currentLoadId) {
                 console.log(`Carga categoría #${loadId} obsoleta, ignorando`);
                 isLoading = false;
@@ -486,13 +611,12 @@ function loadCategoryNews(category, searchTerm = '') {
             
             const newsList = [];
             const searchLower = searchTerm ? searchTerm.toLowerCase() : '';
-            const seenIds = new Set(); // Para evitar duplicados
+            const seenIds = new Set();
             
             querySnapshot.forEach(doc => {
                 const news = doc.data();
                 news.id = doc.id;
                 
-                // Evitar duplicados por ID
                 if (seenIds.has(news.id)) {
                     console.warn('Noticia duplicada ignorada:', news.id);
                     return;
@@ -502,6 +626,13 @@ function loadCategoryNews(category, searchTerm = '') {
                 // Filtrar por categoría
                 if (!news.category || news.category.trim() !== category.trim()) {
                     return;
+                }
+                
+                // Filtrar por subcategoría si se especifica
+                if (subcategory && subcategory !== '') {
+                    if (!news.subcategory || news.subcategory.trim() !== subcategory.trim()) {
+                        return;
+                    }
                 }
                 
                 // Filtrar por búsqueda si existe
@@ -518,7 +649,7 @@ function loadCategoryNews(category, searchTerm = '') {
                 newsList.push(news);
             });
             
-            // Ordenar por fecha (más reciente primero)
+            // Ordenar por fecha
             newsList.sort((a, b) => {
                 const dateA = a.timestamp ? (a.timestamp.toDate ? a.timestamp.toDate() : new Date(a.timestamp)) : new Date(0);
                 const dateB = b.timestamp ? (b.timestamp.toDate ? b.timestamp.toDate() : new Date(b.timestamp)) : new Date(0);
@@ -528,6 +659,9 @@ function loadCategoryNews(category, searchTerm = '') {
             // Mostrar noticias
             if (newsList.length === 0) {
                 let message = `No hay noticias en la categoría "${category}"`;
+                if (subcategory) {
+                    message += ` en la subcategoría "${subcategory}"`;
+                }
                 if (searchTerm) {
                     message += ` con el término "${searchTerm}"`;
                 }
@@ -536,6 +670,12 @@ function loadCategoryNews(category, searchTerm = '') {
                     <div class="category-no-results">
                         <i class="fas fa-search"></i>
                         <h4>${message}</h4>
+                        ${subcategory ? 
+                            `<button id="clear-subcategory-filter" class="back-to-all-category">
+                                <i class="fas fa-times"></i> Mostrar todas las subcategorías de ${category}
+                            </button>` 
+                            : ''
+                        }
                         ${searchTerm ? 
                             `<button id="clear-current-category-search-public" class="back-to-all-category">
                                 <i class="fas fa-times"></i> Mostrar todas las noticias de ${category}
@@ -545,41 +685,72 @@ function loadCategoryNews(category, searchTerm = '') {
                     </div>
                 `;
                 
-                // Agregar event listener al botón de limpiar búsqueda si existe
-                const clearBtn = document.getElementById('clear-current-category-search-public');
-                if (clearBtn && !clearBtn.dataset.listenerAdded) {
-                    clearBtn.dataset.listenerAdded = 'true';
-                    clearBtn.addEventListener('click', () => {
+                // Event listener para limpiar subcategoría
+                const clearSubcatBtn = document.getElementById('clear-subcategory-filter');
+                if (clearSubcatBtn) {
+                    clearSubcatBtn.addEventListener('click', () => {
+                        showCategoryDetail(category);
+                    });
+                }
+                
+                // Event listener para limpiar búsqueda
+                const clearSearchBtn = document.getElementById('clear-current-category-search-public');
+                if (clearSearchBtn && !clearSearchBtn.dataset.listenerAdded) {
+                    clearSearchBtn.dataset.listenerAdded = 'true';
+                    clearSearchBtn.addEventListener('click', () => {
                         categorySearchInput.value = '';
                         currentCategorySearch = '';
                         clearCategorySearchBtn.style.display = 'none';
-                        loadCategoryNews(category);
+                        loadCategoryNews(category, subcategory);
                     });
                 }
+                
                 isLoading = false;
                 return;
-            } else {
-                // Mostrar contador de resultados si hay búsqueda
+            }
+            
+            // Mostrar información de filtros activos
+            if (subcategory || searchTerm) {
+                const resultsInfo = document.createElement('div');
+                resultsInfo.className = 'category-search-results active-filters';
+                
+                let filterText = '';
+                if (subcategory) filterText += `Subcategoría: <strong>${subcategory}</strong>`;
                 if (searchTerm) {
-                    const resultsInfo = document.createElement('div');
-                    resultsInfo.className = 'category-search-results';
-                    resultsInfo.innerHTML = `
-                        <i class="fas fa-search"></i>
-                        <span>Mostrando <strong>${newsList.length}</strong> noticia${newsList.length !== 1 ? 's' : ''} 
-                        ${searchTerm ? `con el término "<strong>${searchTerm}</strong>"` : ''}</span>
-                    `;
-                    categoryNewsContainer.appendChild(resultsInfo);
+                    if (filterText) filterText += ' y ';
+                    filterText += `Búsqueda: <strong>"${searchTerm}"</strong>`;
                 }
                 
-                const seenCardIds = new Set(); // Para evitar tarjetas duplicadas
-                newsList.forEach(news => {
-                    if (!seenCardIds.has(news.id)) {
-                        seenCardIds.add(news.id);
-                        const newsCard = createNewsCardForCategory(news);
-                        categoryNewsContainer.appendChild(newsCard);
-                    }
-                });
+                resultsInfo.innerHTML = `
+                    <i class="fas fa-filter"></i>
+                    <span>Mostrando <strong>${newsList.length}</strong> noticia${newsList.length !== 1 ? 's' : ''} 
+                    con ${filterText}</span>
+                    <button id="clear-all-category-filters" class="clear-filter-btn">
+                        <i class="fas fa-times"></i> Limpiar filtros
+                    </button>
+                `;
+                categoryNewsContainer.appendChild(resultsInfo);
+                
+                const clearAllBtn = document.getElementById('clear-all-category-filters');
+                if (clearAllBtn) {
+                    clearAllBtn.addEventListener('click', () => {
+                        categorySearchInput.value = '';
+                        currentCategorySearch = '';
+                        if (clearCategorySearchBtn) clearCategorySearchBtn.style.display = 'none';
+                        showCategoryDetail(category);
+                    });
+                }
             }
+            
+            // Mostrar noticias
+            const seenCardIds = new Set();
+            newsList.forEach(news => {
+                if (!seenCardIds.has(news.id)) {
+                    seenCardIds.add(news.id);
+                    const newsCard = createNewsCardForCategory(news);
+                    categoryNewsContainer.appendChild(newsCard);
+                }
+            });
             
             isLoading = false;
             console.log(`Carga categoría #${loadId} completada: ${newsList.length} noticias`);
@@ -617,6 +788,7 @@ function createNewsCardForCategory(news) {
         <div class="news-image" style="background-image: url('${imageUrl}')"></div>
         <div class="news-content">
             <span class="news-category">${news.category || 'General'}</span>
+            ${news.subcategory ? `<span class="news-subcategory-badge">${news.subcategory}</span>` : ''}
             <h3 class="news-title">${news.title}</h3>
             <div class="news-date">
                 <i class="far fa-calendar-alt"></i>
@@ -627,7 +799,7 @@ function createNewsCardForCategory(news) {
         </div>
     `;
     
-    // Event listener con verificación de existencia (solo una vez)
+    // Event listener
     if (!card.dataset.listenerAdded) {
         card.dataset.listenerAdded = 'true';
         card.addEventListener('click', () => {
@@ -650,7 +822,7 @@ function showNewsDetail(newsId) {
     newsDetailLoading.classList.remove('hidden');
     
     const newUrl = window.location.origin + window.location.pathname + '?news=' + newsId;
-    window.history.pushState({ newsId, category: currentCategory, search: currentSearch }, '', newUrl);
+    window.history.pushState({ newsId, category: currentCategory, subcategory: currentSubcategory, search: currentSearch }, '', newUrl);
     
     db.collection('news').doc(newsId).get()
         .then(doc => {
@@ -679,6 +851,15 @@ function displayNewsDetail(news) {
 
     newsDetailTitle.textContent = news.title;
     newsDetailCategory.textContent = news.category || 'General';
+    
+    // Mostrar subcategoría si existe
+    if (news.subcategory) {
+        const subcategorySpan = document.createElement('span');
+        subcategorySpan.className = 'news-detail-subcategory';
+        subcategorySpan.innerHTML = ` › ${news.subcategory}`;
+        newsDetailCategory.appendChild(subcategorySpan);
+    }
+    
     newsDetailAuthor.textContent = `Por: ${news.author || 'Administrador'}`;
     newsDetailDate.textContent = formattedDate;
     newsDetailImage.style.backgroundImage = `url('${imageUrl}')`;
@@ -768,6 +949,7 @@ function getVideoEmbedCode(videoUrl) {
 // Volver a las categorías
 function showCategories() {
     currentCategory = '';
+    currentSubcategory = '';
     currentCategorySearch = '';
     
     categoriesSection.classList.remove('hidden');
@@ -792,7 +974,7 @@ function showCategories() {
 // Volver a la categoría actual
 function showCurrentCategory() {
     if (currentCategory) {
-        showCategoryDetail(currentCategory);
+        showCategoryDetail(currentCategory, currentSubcategory);
     } else {
         showCategories();
     }
@@ -848,12 +1030,13 @@ window.addEventListener('popstate', function(event) {
     const urlParams = new URLSearchParams(window.location.search);
     const newsParam = urlParams.get('news');
     const categoryParam = urlParams.get('category');
+    const subcategoryParam = urlParams.get('subcategory');
     const searchParam = urlParams.get('search');
     
     if (newsParam) {
         showNewsDetail(newsParam);
     } else if (categoryParam) {
-        showCategoryDetail(categoryParam);
+        showCategoryDetail(categoryParam, subcategoryParam || '');
     } else {
         if (searchParam !== null) {
             currentSearch = searchParam;

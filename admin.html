@@ -61,20 +61,25 @@
                         <label for="news-category">Categoría</label>
                         <select id="news-category" required>
                             <option value="">Selecciona una categoría</option>
-                            <option value="Política">Política</option>
                             <option value="Tecnología">Tecnología</option>
-                            <option value="Deportes">Deportes</option>
-                            <option value="Cultura">Cultura</option>
                             <option value="Salud">Salud</option>
                             <option value="Internacional">Internacional</option>
-                            <option value="Economía">Economía</option>
                             <option value="Educación">Educación</option>
-                            <option value="Entretenimiento">Entretenimiento</option>
                             <option value="Ciencia">Ciencia</option>
                             <option value="Ayudas">Ayudas Sociales</option>
                             <option value="Comunitaria">Comunidad</option>
+                            <option value="Seguridad Publica">Seguridad</option>
                         </select>
                     </div>
+                </div>
+                
+                <!-- NUEVO: Selector de subcategoría -->
+                <div class="form-group" id="subcategory-group">
+                    <label for="news-subcategory">Subcategoría <span id="subcategory-label-hint"></span></label>
+                    <select id="news-subcategory">
+                        <option value="">Selecciona una subcategoría (opcional)</option>
+                    </select>
+                    <small class="help-text">Las subcategorías ayudan a organizar mejor las noticias</small>
                 </div>
                 
                 <!-- SECCIÓN MEJORADA DE IMÁGENES -->
@@ -150,20 +155,18 @@
                     <div class="test-images-section">
                         <h4><i class="fas fa-vial"></i> Imágenes de prueba por categoría:</h4>
                         <div class="test-images-buttons">
-                            <button type="button" class="test-img-btn" data-category="noticias">
-                                <i class="fas fa-newspaper"></i> Noticias
+                            <button type="button" class="test-img-btn" data-category="ciencia">
+                                <i class="fas fa-newspaper"></i> Ciencia
                             </button>
+                            <button type="button" class="test-img-btn" data-category="astronomia">
+                                <i class="fas fa-newspaper"></i> Astronomía
+                            </button>                           
                             <button type="button" class="test-img-btn" data-category="tecnologia">
-                                <i class="fas fa-laptop"></i> Tecnología
-                            </button>
-                            <button type="button" class="test-img-btn" data-category="deportes">
-                                <i class="fas fa-futbol"></i> Deportes
+                                <i class="fas fa-futbol"></i> Tecnología
                             </button>
                             <button type="button" class="test-img-btn" data-category="salud">
                                 <i class="fas fa-heartbeat"></i> Salud
                             </button>
-                            <button type="button" class="test-img-btn" data-category="cultura">
-                                <i class="fas fa-theater-masks"></i> Cultura
                             </button>
                             <button type="button" class="test-img-btn" data-category="general">
                                 <i class="fas fa-image"></i> General
@@ -172,8 +175,8 @@
                     </div>
                     
                     <small class="help-text">
-                        <strong>Instrucciones:</strong> 1) Usa un servicio recomendado para subir tu imagen 
-                        2) Copia la URL generada 3) Pégala en el campo superior 4) Verifica la vista previa
+                        <strong>Instrucciones:</strong> 1. Usa un servicio recomendado para subir tu imagen 
+                        2. Copia la URL generada 3. Pégala en el campo superior 4. Verifica la vista previa
                     </small>
                 </div>
                 
@@ -238,18 +241,14 @@
                     <div class="admin-filters">
                         <select id="admin-category-filter" class="category-filter-admin">
                             <option value="">Todas las categorías</option>
-                            <option value="Política">Política</option>
                             <option value="Tecnología">Tecnología</option>
-                            <option value="Deportes">Deportes</option>
-                            <option value="Cultura">Cultura</option>
                             <option value="Salud">Salud</option>
                             <option value="Internacional">Internacional</option>
-                            <option value="Economía">Economía</option>
                             <option value="Educación">Educación</option>
-                            <option value="Entretenimiento">Entretenimiento</option>
                             <option value="Ciencia">Ciencia</option>
                             <option value="Comunitaria">Comunidad</option>
                             <option value="Ayudas">Ayudas Sociales</option>
+                            <option value="Seguridad Publica">Seguridad</option>
                         </select>
                         <div class="search-box">
                             <input type="text" id="search-news" placeholder="Buscar noticias...">
@@ -318,7 +317,7 @@
                         <i class="fas fa-edit"></i> Seguir Editando
                     </button>
                     <button id="publish-from-preview" class="publish-btn">
-                        <i classw="fas fa-paper-plane"></i> Publicar Ahora
+                        <i class="fas fa-paper-plane"></i> Publicar Ahora
                     </button>
                 </div>
             </div>
@@ -339,6 +338,7 @@
     </footer>
 
     <script src="firebase-config.js"></script>
+    <script src="subcategorias.js"></script>
     <script src="admin.js"></script>
 </body>
 </html>

@@ -36,11 +36,11 @@ const forceReloadBtn = document.getElementById('force-reload');
 const viewCategoriesBtn = document.getElementById('view-categories');
 const viewListBtn = document.getElementById('view-list');
 
-// NUEVAS REFERENCIAS para búsqueda en categoría
+// Referencias para búsqueda en categoría
 const categorySearchInput = document.getElementById('category-search-input');
 const clearCategorySearchBtn = document.getElementById('clear-category-search');
 
-// NUEVAS REFERENCIAS para funcionalidad de imágenes
+// Referencias para funcionalidad de imágenes
 const newsImageInput = document.getElementById('news-image');
 const testImageUrlBtn = document.getElementById('test-image-url');
 const imagePreviewContainer = document.getElementById('image-preview-container');
@@ -60,73 +60,71 @@ let currentCategorySearch = '';
 
 // Colores para cada categoría
 const categoryColors = {
-    'Política': '#ff00a2',
     'Tecnología': '#2400f2',
-    'Deportes': '#c42513',
-    'Cultura': '#8007af',
     'Salud': '#6bc4ff',
     'Internacional': '#ff9d00',
-    'Economía': '#0ed9b1',
     'Educación': '#27ae60',
-    'Entretenimiento': '#e3ea00',
-    'Ciencia': '#3c454e',
-    'Ayudas': '#692e00',
-    'Comunitaria': '#ff0000',
+    'Ciencia': '#ff00d4',
+    'Ayudas': '#ff0000',
+    'Comunitaria': '#e3ea00',
+    'Seguridad Publica': '#d400ff',
     'General': '#d5cdcd'
 };
 
 // Iconos para cada categoría
 const categoryIcons = {
-    'Política': 'fa-landmark',
     'Tecnología': 'fa-microchip',
-    'Deportes': 'fa-futbol',
-    'Cultura': 'fa-theater-masks',
     'Salud': 'fa-heartbeat',
     'Internacional': 'fa-globe-americas',
-    'Economía': 'fa-chart-line',
     'Educación': 'fa-graduation-cap',
-    'Entretenimiento': 'fa-film',
     'Ciencia': 'fa-flask',
     'Ayudas': 'fa-hands-helping',
     'Comunitaria': 'fa-home',
+    'Seguridad Publica': 'fa-lock',
     'General': 'fa-newspaper'
 };
 
 // Imágenes de prueba por categoría
 const testImages = {
-    'noticias': [
-        'https://images.unsplash.com/photo-1588681664899-f142ff2dc9b1?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
-        'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
-        'https://images.unsplash.com/photo-1557426272-fc759fdf7a8d?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80'
-    ],
     'tecnologia': [
-        'https://images.unsplash.com/photo-1518709268805-4e9042af2176?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
-        'https://images.unsplash.com/photo-1517077304055-6e89abbf09b0?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
-        'https://images.unsplash.com/photo-1498050108023-c5249f4df085?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80'
-    ],
-    'deportes': [
-        'https://images.unsplash.com/photo-1461896836934-ffe607ba8211?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
-        'https://images.unsplash.com/photo-1575361204480-aadea25e6e68?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
-        'https://images.unsplash.com/photo-1546519638-68e109498ffc?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80'
+        'https://thumbs.dreamstime.com/b/programador-escribir-c%C3%B3digo-en-computadoras-de-escritorio-desarrollar-el-concepto-tecnolog%C3%ADas-programaci%C3%B3n-y-codificaci%C3%B3n-169718214.jpg',
+        'https://img.freepik.com/fotos-premium/vr-auriculares-computadora-portatil-fondo-azul-concepto-vr-juego-simular-tecnologia_34777-318.jpg?semt=ais_hybrid&w=740',
+        'https://thumbs.dreamstime.com/b/ro-exposici%C3%B3n-internacional-de-la-rob%C3%B3tica-y-de-las-tecnolog%C3%ADas-avanzadas-62956671.jpg',
+        'https://images.unsplash.com/photo-1485827404703-89b55fcc595e?fm=jpg&q=60&w=3000&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MjB8fHRlY2hub2xvZ3l8ZW58MHx8MHx8fDA=',
+        'https://plus.unsplash.com/premium_photo-1681426687411-21986b0626a8?fm=jpg&q=60&w=3000&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTN8fG51ZXZhJTIwdGVjbm9sb2clQzMlQURhfGVufDB8fDB8fHww',
+        'https://thumbs.dreamstime.com/b/tecnolog%C3%ADa-moderna-artilugios-106675293.jpg',
+        'https://cdn.pixabay.com/photo/2020/04/09/18/07/future-5022544_640.jpg'
     ],
     'salud': [
         'https://images.unsplash.com/photo-1579684385127-1ef15d508118?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
         'https://images.unsplash.com/photo-1559757148-5c350d0d3c56?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
-        'https://images.unsplash.com/photo-1505751172876-fa1923c5c528?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80'
+        'https://images.unsplash.com/photo-1505751172876-fa1923c5c528?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
+        'https://media.istockphoto.com/id/1363774646/es/vector/salud-mental.jpg?s=612x612&w=0&k=20&c=7dG5StYXYTtwg58eLde9b4eHLIJ4gwF26Q6iN-LxN2c=',
+        'https://media.gettyimages.com/id/2180039271/es/foto/mental-health-concept.jpg?s=612x612&w=0&k=20&c=Uw2rP3W7h3RmnGDUzKF1any4xZBsvdoDZxMSDg24z_8=',
+        'https://media.gettyimages.com/id/2086018126/es/foto/concepto-de-alimentaci%C3%B3n-saludable-y-ejercicio.jpg?s=612x612&w=0&k=20&c=ifHWqtVw8YQjr9fMkusGkWtpXGRqWbcfo0miKw3qHbQ='
     ],
-    'cultura': [
-        'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
-        'https://images.unsplash.com/photo-1540575467063-178a50c2df87?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
-        'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80'
+    'ciencia':[
+        'https://wallpapers.com/images/hd/science-pictures-bveq545pfv117m5k.jpg',
+        'https://media.gettyimages.com/id/2150630975/es/foto/scientist-uses-pipette-to-remove-sample-from-petri-dish.jpg?s=612x612&w=0&k=20&c=2sufyWfS0RGVZFuXz0_ZWJhS-bF8i1fTWmc7lp3Umi8=',
+        'https://wallpapers.com/images/hd/science-pictures-fccoxonnfsz54te3.jpg',
+        'https://media.istockphoto.com/id/2163767427/es/foto/microscopio-control-de-la-mujer-e-investigaci%C3%B3n-de-virus-del-estudio-de-la-ciencia-con-el.jpg?s=612x612&w=0&k=20&c=fR36b9-VZ178llNJe3_5SiKqAV9fFMupwSzL6BvB1HE=',
+        'https://media.istockphoto.com/id/1440495095/photo/laboratory-investigations-concerning-test-and-medicine-against-covid.jpg?b=1&s=612x612&w=0&k=20&c=Og-YVEk-IS89vax1d0CBLfHaDGHyXfVNZUI3oQVFXC4=',
+        ''
     ],
-    'general': [
+    'astronomia':[
+        'https://i.pinimg.com/originals/2f/f7/94/2ff7944f1adf4b7e04c45e8c192d16ae.jpg',
+        'https://assets.science.nasa.gov/dynamicimage/assets/science/cds/general/images/2023/06/b/bh-accretion-disk-sim-360-4k-prores.00001-print.jpg?w=1024&h=1024&fit=clip&crop=faces,focalpoint',
+        'https://e01-elmundo.uecdn.es/assets/multimedia/imagenes/2025/11/28/17643339955825.gif',
+        'https://upload.wikimedia.org/wikipedia/commons/4/4d/NASA_Apollo_17_Lunar_Roving_Vehicle.jpg',
+        'https://www.nasa.gov/wp-content/uploads/2026/02/55093881630-42e655abce-o.jpg',
+        'https://cdn.pixabay.com/photo/2011/12/13/14/31/earth-11015_640.jpg'
+    ],
+    'general': [ 
         'https://images.unsplash.com/photo-1588681664899-f142ff2dc9b1?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
         'https://images.unsplash.com/photo-1504711434969-e33886168f5c?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
         'https://images.unsplash.com/photo-1506126613408-eca07ce68773?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80'
     ]
 };
-
-// ===== FUNCIONALIDAD PARA IMÁGENES =====
 
 // Probar URL de imagen
 function testImageUrl() {
@@ -309,16 +307,31 @@ function initImageFunctionality() {
     });
 }
 
-// CON ESTE BLOQUE CORREGIDO (sin verificación redundante de UID):
+// ===== FUNCIONALIDAD PARA SUBCATEGORÍAS =====
+
+// Inicializar selector de subcategorías
+function initSubcategorySelector() {
+    const categorySelect = document.getElementById('news-category');
+    if (categorySelect && !categorySelect.dataset.subcatListenerAdded) {
+        categorySelect.dataset.subcatListenerAdded = 'true';
+        categorySelect.addEventListener('change', function() {
+            const selectedCategory = this.value;
+            populateSubcategorySelect(selectedCategory);
+            updateSubcategoryHint(selectedCategory);
+        });
+    }
+}
+
+// ===== AUTENTICACIÓN =====
 auth.onAuthStateChanged(user => {
     if (user) {
-        // MOSTRAR UI DE ADMINISTRADOR - SIN VERIFICACIÓN EXTRA
-        // Las reglas de Firestore ya manejan la seguridad
+        // MOSTRAR UI DE ADMINISTRADOR
         showAdminUI(user);
         loadAdminNews();
         initCKEditor();
         initSummaryCounter();
         initImageFunctionality();
+        initSubcategorySelector();
     } else {
         showLoginUI();
     }
@@ -370,8 +383,11 @@ function setupEventListeners() {
                 if (summaryChars) {
                     summaryChars.textContent = '0';
                 }
-                // Limpiar también la vista previa de imagen
+                // Limpiar también la vista previa de imagen y subcategorías
                 imagePreviewContainer.classList.add('hidden');
+                document.getElementById('news-subcategory').innerHTML = '<option value="">Selecciona una subcategoría (opcional)</option>';
+                document.getElementById('news-subcategory').disabled = true;
+                document.getElementById('subcategory-label-hint').textContent = '';
                 showMessage('Formulario limpiado', 'success');
             }
         });
@@ -473,7 +489,7 @@ function setupEventListeners() {
         });
     }
     
-    // NUEVO: Búsqueda en categoría específica
+    // Búsqueda en categoría específica
     let categorySearchDebounceTimer;
     if (categorySearchInput) {
         categorySearchInput.addEventListener('input', function() {
@@ -502,7 +518,7 @@ function setupEventListeners() {
         });
     }
     
-    // NUEVO: Botón para limpiar búsqueda en categoría
+    // Botón para limpiar búsqueda en categoría
     if (clearCategorySearchBtn && !clearCategorySearchBtn.dataset.listenerAdded) {
         clearCategorySearchBtn.dataset.listenerAdded = 'true';
         clearCategorySearchBtn.addEventListener('click', () => {
@@ -593,7 +609,7 @@ function showLoginUI() {
     adminPanel.classList.add('hidden');
 }
 
-// Cargar noticias para el administrador - VERSIÓN SIN DUPLICADOS
+// Cargar noticias para el administrador
 function loadAdminNews(searchTerm = '', category = '') {
     if (isAdminLoading) {
         console.log('Carga de admin en progreso, ignorando...');
@@ -727,7 +743,7 @@ function loadAdminNewsList() {
     loadAdminNews(searchNewsInput.value, adminCategoryFilter ? adminCategoryFilter.value : '');
 }
 
-// Cargar noticias de una categoría específica en admin - VERSIÓN CON BÚSQUEDA
+// Cargar noticias de una categoría específica en admin
 function loadAdminCategoryNews(category, searchTerm = '') {
     if (isAdminLoading) {
         console.log('Carga de admin en progreso, ignorando...');
@@ -967,6 +983,35 @@ function createAdminCategoryCard(categoryName, newsList) {
     const categoryColor = categoryColors[categoryName] || '#4a6fc1';
     const categoryIcon = categoryIcons[categoryName] || 'fa-folder';
     
+    // Agrupar por subcategoría para mostrar variedad
+    const subcategoriesMap = {};
+    newsList.forEach(news => {
+        const sub = news.subcategory || 'General';
+        if (!subcategoriesMap[sub]) {
+            subcategoriesMap[sub] = [];
+        }
+        subcategoriesMap[sub].push(news);
+    });
+    
+    // Obtener lista de noticias para mostrar (priorizando diferentes subcategorías)
+    const displayNews = [];
+    const subcategories = Object.keys(subcategoriesMap);
+    
+    // Mostrar hasta 3 noticias de diferentes subcategorías si es posible
+    if (subcategories.length >= 3) {
+        for (let i = 0; i < 3; i++) {
+            if (subcategoriesMap[subcategories[i]] && subcategoriesMap[subcategories[i]].length > 0) {
+                displayNews.push(subcategoriesMap[subcategories[i]][0]);
+            }
+        }
+    } else {
+        newsList.slice(0, 3).forEach(news => {
+            if (!displayNews.some(n => n.id === news.id)) {
+                displayNews.push(news);
+            }
+        });
+    }
+    
     card.innerHTML = `
         <div class="category-card-header" style="background-color: ${categoryColor}">
             <div class="category-icon">
@@ -977,11 +1022,14 @@ function createAdminCategoryCard(categoryName, newsList) {
         </div>
         <div class="category-card-body">
             <div class="category-news-list">
-                ${newsList.slice(0, 3).map(news => `
+                ${displayNews.map(news => {
+                    const subcatDisplay = news.subcategory ? `<span class="news-subcategory-badge">${news.subcategory}</span>` : '';
+                    return `
                     <div class="category-news-item-admin" data-id="${news.id}">
                         <div class="category-news-image" style="background-image: url('${news.imageUrl || DEFAULT_IMAGE}')"></div>
                         <div class="category-news-content">
                             <h4 class="category-news-title">${news.title}</h4>
+                            ${subcatDisplay}
                             <div class="category-news-date">
                                 <i class="far fa-calendar-alt"></i>
                                 ${formatShortDate(news.timestamp)}
@@ -996,8 +1044,19 @@ function createAdminCategoryCard(categoryName, newsList) {
                             </div>
                         </div>
                     </div>
-                `).join('')}
+                `}).join('')}
             </div>
+            
+            <!-- Mostrar subcategorías disponibles -->
+            ${Object.keys(subcategoriesMap).length > 1 ? `
+                <div class="subcategories-mini-list">
+                    <span class="subcategories-label">Subcategorías:</span>
+                    ${Object.keys(subcategoriesMap).slice(0, 5).map(sub => 
+                        `<button class="subcategory-mini-btn" data-category="${categoryName}" data-subcategory="${sub}">${sub}</button>`
+                    ).join('')}
+                    ${Object.keys(subcategoriesMap).length > 5 ? '<span class="more-subcats">+ más</span>' : ''}
+                </div>
+            ` : ''}
         </div>
         <div class="category-card-footer">
             <button class="view-category-btn-admin" data-category="${categoryName}">
@@ -1007,7 +1066,7 @@ function createAdminCategoryCard(categoryName, newsList) {
         </div>
     `;
     
-    // Agregar event listeners (solo una vez)
+    // Agregar event listeners para ver categoría
     const viewBtn = card.querySelector('.view-category-btn-admin');
     if (viewBtn && !viewBtn.dataset.listenerAdded) {
         viewBtn.dataset.listenerAdded = 'true';
@@ -1018,7 +1077,23 @@ function createAdminCategoryCard(categoryName, newsList) {
         });
     }
     
-    // Agregar listeners a los botones de editar/eliminar (solo una vez)
+    // Agregar listeners para subcategorías
+    const subcatBtns = card.querySelectorAll('.subcategory-mini-btn');
+    subcatBtns.forEach(btn => {
+        if (!btn.dataset.listenerAdded) {
+            btn.dataset.listenerAdded = 'true';
+            btn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                const category = this.getAttribute('data-category');
+                const subcategory = this.getAttribute('data-subcategory');
+                // Filtrar por subcategoría - implementar según necesidad
+                console.log(`Filtrar por subcategoría: ${category} > ${subcategory}`);
+                showMessage(`Filtro por subcategoría: ${subcategory}`, 'info');
+            });
+        }
+    });
+    
+    // Agregar listeners a los botones de editar/eliminar
     const editBtns = card.querySelectorAll('.edit-news-admin');
     editBtns.forEach(btn => {
         if (!btn.dataset.listenerAdded) {
@@ -1043,7 +1118,7 @@ function createAdminCategoryCard(categoryName, newsList) {
         }
     });
     
-    // Listener para la noticia completa (solo una vez)
+    // Listener para la noticia completa
     const newsItems = card.querySelectorAll('.category-news-item-admin');
     newsItems.forEach(item => {
         if (!item.dataset.listenerAdded) {
@@ -1074,6 +1149,7 @@ function createAdminNewsCard(news) {
         <div class="news-content">
             <div class="news-card-header">
                 <span class="news-category">${news.category || 'General'}</span>
+                ${news.subcategory ? `<span class="news-subcategory-badge">${news.subcategory}</span>` : ''}
                 <div class="news-card-actions">
                     <button class="edit-news" data-id="${news.id}">
                         <i class="fas fa-edit"></i> Editar
@@ -1094,7 +1170,7 @@ function createAdminNewsCard(news) {
         </div>
     `;
     
-    // Agregar event listeners (solo una vez)
+    // Agregar event listeners
     const deleteBtn = card.querySelector('.delete-news');
     if (deleteBtn && !deleteBtn.dataset.listenerAdded) {
         deleteBtn.dataset.listenerAdded = 'true';
@@ -1115,7 +1191,7 @@ function createAdminNewsCard(news) {
         });
     }
     
-    // Listener para la tarjeta (solo una vez)
+    // Listener para la tarjeta
     if (!card.dataset.listenerAdded) {
         card.dataset.listenerAdded = 'true';
         card.addEventListener('click', () => {
@@ -1152,6 +1228,13 @@ function editNews(newsId) {
                 
                 document.getElementById('news-title').value = news.title || '';
                 document.getElementById('news-category').value = news.category || '';
+                
+                // Cargar subcategoría
+                if (news.category) {
+                    populateSubcategorySelect(news.category, news.subcategory || '');
+                    updateSubcategoryHint(news.category);
+                }
+                
                 document.getElementById('news-image').value = news.imageUrl || '';
                 document.getElementById('news-summary').value = news.summary || '';
                 document.getElementById('news-tags').value = news.tags || '';
@@ -1170,7 +1253,7 @@ function editNews(newsId) {
                 // Mostrar vista previa si hay imagen
                 if (news.imageUrl) {
                     newsImageInput.value = news.imageUrl;
-                    testImageUrl(); // Probar automáticamente
+                    testImageUrl();
                 } else {
                     imagePreviewContainer.classList.add('hidden');
                 }
@@ -1194,6 +1277,7 @@ function saveDraft() {
     const draft = {
         title: document.getElementById('news-title').value.trim(),
         category: document.getElementById('news-category').value,
+        subcategory: document.getElementById('news-subcategory').value,
         imageUrl: document.getElementById('news-image').value.trim(),
         summary: document.getElementById('news-summary').value.trim(),
         content: ckeditor ? ckeditor.getData() : document.getElementById('news-content').value.trim(),
@@ -1238,6 +1322,13 @@ function restoreDraft() {
     
     document.getElementById('news-title').value = currentDraft.title || '';
     document.getElementById('news-category').value = currentDraft.category || '';
+    
+    // Restaurar subcategoría
+    if (currentDraft.category) {
+        populateSubcategorySelect(currentDraft.category, currentDraft.subcategory || '');
+        updateSubcategoryHint(currentDraft.category);
+    }
+    
     document.getElementById('news-image').value = currentDraft.imageUrl || '';
     document.getElementById('news-summary').value = currentDraft.summary || '';
     document.getElementById('news-tags').value = currentDraft.tags || '';
@@ -1268,6 +1359,7 @@ function publishNews(event) {
     
     const title = document.getElementById('news-title').value.trim();
     const category = document.getElementById('news-category').value;
+    const subcategory = document.getElementById('news-subcategory').value;
     const imageUrl = document.getElementById('news-image').value.trim();
     const summary = document.getElementById('news-summary').value.trim();
     const content = ckeditor ? ckeditor.getData() : document.getElementById('news-content').value.trim();
@@ -1283,6 +1375,7 @@ function publishNews(event) {
     const newsItem = {
         title,
         category,
+        subcategory: subcategory || '',
         imageUrl: imageUrl || DEFAULT_IMAGE,
         summary,
         content,
@@ -1317,8 +1410,10 @@ function publishNews(event) {
             delete newsForm.dataset.editingId;
             publishNewsBtn.innerHTML = '<i class="fas fa-paper-plane"></i> Publicar Noticia';
             
-            // Limpiar vista previa de imagen
+            // Limpiar vista previa de imagen y subcategorías
             imagePreviewContainer.classList.add('hidden');
+            document.getElementById('news-subcategory').innerHTML = '<option value="">Selecciona una subcategoría (opcional)</option>';
+            document.getElementById('news-subcategory').disabled = true;
             
             localStorage.removeItem('newsDraft');
             currentDraft = null;
@@ -1346,6 +1441,7 @@ function publishNews(event) {
 function previewNews() {
     const title = document.getElementById('news-title').value.trim();
     const category = document.getElementById('news-category').value;
+    const subcategory = document.getElementById('news-subcategory').value;
     const imageUrl = document.getElementById('news-image').value.trim();
     const summary = document.getElementById('news-summary').value.trim();
     const content = ckeditor ? ckeditor.getData() : document.getElementById('news-content').value.trim();
@@ -1365,6 +1461,7 @@ function previewNews() {
             <div class="news-detail-header">
                 <div class="news-detail-meta">
                     <span class="news-category news-detail-category">${category || 'General'}</span>
+                    ${subcategory ? `<span class="news-detail-subcategory">› ${subcategory}</span>` : ''}
                     <span class="news-detail-author">Por: ${auth.currentUser ? auth.currentUser.email : 'Administrador'}</span>
                 </div>
                 <h1 class="news-detail-title">${title}</h1>
